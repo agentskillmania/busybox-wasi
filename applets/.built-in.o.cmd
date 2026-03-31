@@ -1,0 +1,1 @@
+cmd_applets/built-in.o :=  /Users/yusangeng/wasi-sdk/bin/clang --target=wasm32-wasip1 --sysroot=/Users/yusangeng/wasi-sdk/share/wasi-sysroot -I/Users/yusangeng/Downloads/busybox-1.37.0-wasm-build/wasi_include -nostdlib -nostdlib  -r -o applets/built-in.o applets/applets.o
