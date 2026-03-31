@@ -1,1 +1,13 @@
 .vibe
+
+# 编译产物
+*.o
+*.a
+*.cmd
+*.map
+*.out
+
+# 构建配置缓存
+.config.old
+.kconfig.d
+.kernelrelease
