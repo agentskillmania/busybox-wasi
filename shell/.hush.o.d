@@ -91,8 +91,11 @@ shell/hush.o: shell/hush.c include/autoconf.h \
   /Users/yusangeng/wasi-sdk/share/wasi-sysroot/include/wasm32-wasip1/__functions_memcpy.h \
   /Users/yusangeng/wasi-sdk/share/wasi-sysroot/include/wasm32-wasip1/strings.h \
   /Users/yusangeng/wasi-sdk/share/wasi-sysroot/include/wasm32-wasip1/libgen.h \
-  /Users/yusangeng/Downloads/busybox-1.37.0-wasm-build/wasi_include/poll.h \
-  /Users/yusangeng/Downloads/busybox-1.37.0-wasm-build/wasi_include/sys/poll.h \
+  /Users/yusangeng/wasi-sdk/share/wasi-sysroot/include/wasm32-wasip1/poll.h \
+  /Users/yusangeng/wasi-sdk/share/wasi-sysroot/include/wasm32-wasip1/bits/poll.h \
+  /Users/yusangeng/wasi-sdk/share/wasi-sysroot/include/wasm32-wasip1/__header_poll.h \
+  /Users/yusangeng/wasi-sdk/share/wasi-sysroot/include/wasm32-wasip1/__struct_pollfd.h \
+  /Users/yusangeng/wasi-sdk/share/wasi-sysroot/include/wasm32-wasip1/__typedef_nfds_t.h \
   /Users/yusangeng/Downloads/busybox-1.37.0-wasm-build/wasi_include/sys/ioctl.h \
   /Users/yusangeng/wasi-sdk/share/wasi-sysroot/include/wasm32-wasip1/sys/mman.h \
   /Users/yusangeng/wasi-sdk/share/wasi-sysroot/include/wasm32-wasip1/bits/mman.h \
@@ -101,7 +104,6 @@ shell/hush.o: shell/hush.c include/autoconf.h \
   /Users/yusangeng/wasi-sdk/share/wasi-sysroot/include/wasm32-wasip1/bits/resource.h \
   /Users/yusangeng/wasi-sdk/share/wasi-sysroot/include/wasm32-wasip1/__header_sys_resource.h \
   /Users/yusangeng/wasi-sdk/share/wasi-sysroot/include/wasm32-wasip1/__struct_rusage.h \
-  /Users/yusangeng/Downloads/busybox-1.37.0-wasm-build/wasi_include/sys/stat.h \
   /Users/yusangeng/wasi-sdk/share/wasi-sysroot/include/wasm32-wasip1/sys/stat.h \
   /Users/yusangeng/wasi-sdk/share/wasi-sysroot/include/wasm32-wasip1/bits/stat.h \
   /Users/yusangeng/wasi-sdk/share/wasi-sysroot/include/wasm32-wasip1/__struct_stat.h \
@@ -126,6 +128,13 @@ shell/hush.o: shell/hush.c include/autoconf.h \
   /Users/yusangeng/Downloads/busybox-1.37.0-wasm-build/wasi_include/mntent.h \
   /Users/yusangeng/Downloads/busybox-1.37.0-wasm-build/wasi_include/sys/statfs.h \
   /Users/yusangeng/Downloads/busybox-1.37.0-wasm-build/wasi_include/arpa/inet.h \
-  /Users/yusangeng/Downloads/busybox-1.37.0-wasm-build/wasi_include/netinet/in.h \
+  /Users/yusangeng/wasi-sdk/share/wasi-sysroot/include/wasm32-wasip1/netinet/in.h \
+  /Users/yusangeng/wasi-sdk/share/wasi-sysroot/include/wasm32-wasip1/__header_netinet_in.h \
+  /Users/yusangeng/wasi-sdk/share/wasi-sysroot/include/wasm32-wasip1/__struct_in6_addr.h \
+  /Users/yusangeng/wasi-sdk/share/wasi-sysroot/include/wasm32-wasip1/__struct_in_addr.h \
+  /Users/yusangeng/wasi-sdk/share/wasi-sysroot/include/wasm32-wasip1/__typedef_in_addr_t.h \
+  /Users/yusangeng/wasi-sdk/share/wasi-sysroot/include/wasm32-wasip1/__struct_sockaddr_in.h \
+  /Users/yusangeng/wasi-sdk/share/wasi-sysroot/include/wasm32-wasip1/__typedef_in_port_t.h \
+  /Users/yusangeng/wasi-sdk/share/wasi-sysroot/include/wasm32-wasip1/__struct_sockaddr_in6.h \
   include/xatonum.h include/applet_metadata.h include/unicode.h \
   shell/shell_common.h shell/math.h shell/match.h include/NUM_APPLETS.h

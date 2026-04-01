@@ -8,9 +8,12 @@
 #define WUNTRACED    2
 #define WCONTINUED   8
 
-#define WIFEXITED(s)    ((s) & 0x7f)
-#define WTERMSIG(s)    ((s) & 0x7f)
-#define WIFSIGNALED(s) (((signed char) (((s) & 0x7f) + 1) >> 1) > 0)
+#define WIFEXITED(s)    (((s) & 0x7f) == 0)
+#define WEXITSTATUS(s)  (((s) >> 8) & 0xff)
+#define WTERMSIG(s)     ((s) & 0x7f)
+#define WIFSIGNALED(s)  (((signed char) (((s) & 0x7f) + 1) >> 1) > 0)
+#define WSTOPSIG(s)     (((s) >> 8) & 0xff)
+#define WIFSTOPPED(s)   (((s) & 0xff) == 0x7f)
 
 static inline pid_t waitpid(pid_t pid, int *status, int options) {
     if (status) *status = 0;
