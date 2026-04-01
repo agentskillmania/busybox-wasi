@@ -44,6 +44,12 @@ $CC \
 $CC \
   -I"$PROJ_DIR/shell" \
   -c "$PROJ_DIR/shell/wsh_pipe.c" -o wsh_pipe.o
+$CC \
+  -I"$PROJ_DIR/shell" \
+  -c "$PROJ_DIR/shell/wsh_vars.c" -o wsh_vars.o
+$CC \
+  -I"$PROJ_DIR/shell" \
+  -c "$PROJ_DIR/shell/wsh_parse.c" -o wsh_parse.o
 
 # 第四步：编译 stub
 echo "[4/5] 编译 wasi_stubs.c..."
@@ -59,13 +65,13 @@ echo "[5/5] 链接 busybox.wasm..."
 $CC -static -o "$OUTPUT" \
   -Wl,--gc-sections \
   -Wl,--whole-archive "${LIBS[@]}" -Wl,--no-whole-archive \
-  wsh_main.o wsh_pipe.o wasi_stubs.o \
+  wsh_main.o wsh_pipe.o wsh_vars.o wsh_parse.o wasi_stubs.o \
   -lwasi-emulated-signal -lwasi-emulated-mman \
   -lwasi-emulated-process-clocks -lwasi-emulated-getpid \
   -lsetjmp \
   -Wl,--error-limit=0 -Wl,--allow-undefined
 
-rm -f wasi_stubs.o wsh_main.o wsh_pipe.o
+rm -f wasi_stubs.o wsh_main.o wsh_pipe.o wsh_vars.o wsh_parse.o
 
 echo ""
 echo "=== 构建完成 ==="
@@ -79,4 +85,13 @@ echo ""
 $WASMTIME -W exceptions=y "$OUTPUT" --list 2>&1 | wc -l | xargs -I{} echo "{} 个 applets"
 echo ""
 echo "--- wsh 验证 ---"
-$WASMTIME -W exceptions=y "$OUTPUT" wsh -c "test" 2>&1
+$WASMTIME -W exceptions=y --dir=/tmp "$OUTPUT" wsh -c "test" 2>&1
+echo ""
+echo "--- 变量 ---"
+$WASMTIME -W exceptions=y --dir=/tmp "$OUTPUT" wsh -c 'X=hello; echo $X' 2>&1
+echo ""
+echo "--- \$? ---"
+$WASMTIME -W exceptions=y --dir=/tmp "$OUTPUT" wsh -c 'false; echo $?' 2>&1
+echo ""
+echo "--- 命令替换 ---"
+$WASMTIME -W exceptions=y --dir=/tmp "$OUTPUT" wsh -c 'echo $(echo hello)' 2>&1

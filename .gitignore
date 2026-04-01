@@ -9,6 +9,7 @@
 *.out
 *.obj
 *.wasm
+*.tmp
 
 # 构建配置缓存
 .config.old

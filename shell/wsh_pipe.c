@@ -222,21 +222,45 @@ int wsh_run_pipeline(const char *cmdline)
 		return 1;
 	}
 
-	/* 单命令（无管道）：直接执行 */
+	/*
+	 * 单命令（无管道）：也走临时文件 + stderr 输出。
+	 * 统一架构：命令替换 $() 后 stdout 可能指向 sub 临时文件，
+	 * freopen 会覆盖到新的 pipe 临时文件，最终通过 stderr 输出到终端。
+	 */
 	if (nseg == 1) {
-		char tmp[4096];
-		strncpy(tmp, segs[0], sizeof(tmp) - 1);
-		tmp[sizeof(tmp) - 1] = '\0';
+		char cmd[4096];
+		strncpy(cmd, segs[0], sizeof(cmd) - 1);
+		cmd[sizeof(cmd) - 1] = '\0';
 
 		char *tok[256];
-		int n = wsh_tokenize(tmp, tok, 256);
+		int n = wsh_tokenize(cmd, tok, 256);
 		free(buf);
 
 		if (n == 0) {
 			fprintf(stderr, "wsh: empty command\n");
 			return 1;
 		}
-		return wsh_exec(tok, n);
+
+		/* 重定向 stdout 到临时文件 */
+		char out_path[256];
+		wsh_tmp_path(out_path, sizeof(out_path), 0);
+		if (freopen(out_path, "w", stdout) == NULL) {
+			fprintf(stderr, "wsh: cannot open pipe output\n");
+			return 1;
+		}
+
+		int rc = wsh_exec(tok, n);
+		fflush(stdout);
+
+		/* 读临时文件 → 输出到 stderr（终端） */
+		char *result = NULL;
+		size_t rlen = 0;
+		if (wsh_read_file(out_path, &result, &rlen) == 0 && result) {
+			write(STDERR_FILENO, result, rlen);
+			free(result);
+		}
+		remove(out_path);
+		return rc;
 	}
 
 	/* ====== 多级管道：串行执行 ====== */
@@ -321,4 +345,40 @@ int wsh_run_pipeline(const char *cmdline)
 cleanup:
 	free(buf);
 	return rc;
+}
+
+/* ===================== 命令输出捕获 ===================== */
+
+/** 命令捕获临时文件前缀 */
+#define WSH_CAP_PREFIX "/tmp/_wsh_cap_"
+
+/** 捕获计数器 */
+static int g_cap_counter;
+
+char *wsh_capture_output(const char *cmdline)
+{
+	char tmp_path[256];
+	snprintf(tmp_path, sizeof(tmp_path),
+	         WSH_CAP_PREFIX "%d", g_cap_counter++);
+
+	/* 重定向 stdout 到临时文件 */
+	if (freopen(tmp_path, "w", stdout) == NULL)
+		return strdup("");
+
+	int rc = wsh_run_pipeline(cmdline);
+	fflush(stdout);
+	(void)rc;
+
+	/* 读取临时文件，去掉尾部换行 */
+	char *result = NULL;
+	size_t rlen = 0;
+	if (wsh_read_file(tmp_path, &result, &rlen) == 0 && result) {
+		while (rlen > 0 && result[rlen - 1] == '\n') {
+			rlen--;
+			result[rlen] = '\0';
+		}
+	}
+	remove(tmp_path);
+
+	return result ? result : strdup("");
 }
