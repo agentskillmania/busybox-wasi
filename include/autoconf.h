@@ -2,7 +2,7 @@
  * Automatically generated C config: don't edit
  * Busybox version: 1.37.0
  */
-#define AUTOCONF_TIMESTAMP "2026-04-01 16:12:04 CST"
+#define AUTOCONF_TIMESTAMP "2026-04-01 17:52:51 CST"
 
 #define CONFIG_HAVE_DOT_CONFIG 1
 #define ENABLE_HAVE_DOT_CONFIG 1
@@ -260,7 +260,7 @@
 # define IF_SYSROOT(...) __VA_ARGS__
 #endif
 #define IF_NOT_SYSROOT(...)
-#define CONFIG_EXTRA_CFLAGS "-I/Users/yusangeng/Downloads/busybox-1.37.0-wasm-build/wasi_include -D_WASI_EMULATED_SIGNAL -D_WASI_EMULATED_MMAN -D_WASI_EMULATED_PROCESS_CLOCKS -D_WASI_EMULATED_GETPID -Wno-implicit-function-declaration -Wno-int-conversion -Wno-unknown-attributes -Wno-unknown-pragmas -DSOCK_RDM=4 -DSOCK_SEQPACKET=5 -DSOCK_RAW=3 -DSOCK_DCCP=6 -DPRIO_PROCESS=0 -DPRIO_PGRP=1 -DPRIO_USER=2 -DF_GETLK=5 -DF_SETLK=6 -DF_SETLKW=7 -DF_RDLCK=0 -DF_WRLCK=1 -DF_UNLCK=2 -DO_NDELAY=0x800 -D__linux__ -DF_DUPFD=0 -UIP_PKTINFO -UIPV6_PKTINFO"
+#define CONFIG_EXTRA_CFLAGS "-I/Users/yusangeng/Downloads/busybox-1.37.0-wasm-build/wasi_include -D_WASI_EMULATED_SIGNAL -D_WASI_EMULATED_MMAN -D_WASI_EMULATED_PROCESS_CLOCKS -D_WASI_EMULATED_GETPID -Wno-implicit-function-declaration -Wno-int-conversion -Wno-unknown-attributes -Wno-unknown-pragmas -DSOCK_RDM=4 -DSOCK_SEQPACKET=5 -DSOCK_RAW=3 -DSOCK_DCCP=6 -DPRIO_PROCESS=0 -DPRIO_PGRP=1 -DPRIO_USER=2 -DF_GETLK=5 -DF_SETLK=6 -DF_SETLKW=7 -DF_RDLCK=0 -DF_WRLCK=1 -DF_UNLCK=2 -DO_NDELAY=0x800 -D__linux__ -DF_DUPFD=0 -UIP_PKTINFO -UIPV6_PKTINFO -mllvm -wasm-enable-sjlj -mllvm -wasm-use-legacy-eh=0"
 #define ENABLE_EXTRA_CFLAGS 1
 #ifdef MAKE_SUID
 # define IF_EXTRA_CFLAGS(...) __VA_ARGS__ "CONFIG_EXTRA_CFLAGS"

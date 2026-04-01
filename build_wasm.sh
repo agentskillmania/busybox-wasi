@@ -13,7 +13,7 @@ SYSROOT="$WASI_SDK/share/wasi-sysroot"
 # Preview2 编译器：POSIX socket 已内置
 # 注意：中间步骤 ld -r 需要 wasm-ld（wasm-component-ld 不支持 -r）
 # 用 wrapper 过滤 -nostdlib 等不兼容参数
-CC="$WASI_SDK/bin/wasm32-wasip2-clang --sysroot=$SYSROOT -I$PROJ_DIR/wasi_include"
+CC="$WASI_SDK/bin/wasm32-wasip2-clang --sysroot=$SYSROOT -I$PROJ_DIR/wasi_include -mllvm -wasm-enable-sjlj -mllvm -wasm-use-legacy-eh=0"
 AR="$WASI_SDK/bin/llvm-ar"
 LD="$PROJ_DIR/wasm-ld-wrapper.sh"
 OUTPUT="$PROJ_DIR/busybox.wasm"
@@ -42,6 +42,7 @@ $CC \
   -D_WASI_EMULATED_SIGNAL \
   -D_WASI_EMULATED_MMAN \
   -D_WASI_EMULATED_PROCESS_CLOCKS \
+  -mllvm -wasm-enable-sjlj -mllvm -wasm-use-legacy-eh=0 \
   -c "$PROJ_DIR/wasi_stubs.c" -o wasi_stubs.o
 
 # 第四步：链接
@@ -52,6 +53,7 @@ $CC -static -o "$OUTPUT" \
   wasi_stubs.o \
   -lwasi-emulated-signal -lwasi-emulated-mman \
   -lwasi-emulated-process-clocks -lwasi-emulated-getpid \
+  -lsetjmp \
   -Wl,--error-limit=0 -Wl,--allow-undefined
 
 rm -f wasi_stubs.o
@@ -63,6 +65,6 @@ echo ""
 
 # 验证
 echo "=== 验证 ==="
-$WASMTIME "$OUTPUT" echo "Hello from WASM busybox!"
+$WASMTIME -W exceptions=y "$OUTPUT" echo "Hello from WASM busybox!"
 echo ""
-$WASMTIME "$OUTPUT" --list 2>&1 | wc -l | xargs -I{} echo "{} 个 applets"
+$WASMTIME -W exceptions=y "$OUTPUT" --list 2>&1 | wc -l | xargs -I{} echo "{} 个 applets"

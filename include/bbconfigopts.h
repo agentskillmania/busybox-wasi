@@ -48,7 +48,7 @@ static const char bbconfig_config[] ALIGN1 =
 "# CONFIG_FEATURE_SHARED_BUSYBOX is not set\n"
 "CONFIG_CROSS_COMPILER_PREFIX=\"\"\n"
 "CONFIG_SYSROOT=\"\"\n"
-"CONFIG_EXTRA_CFLAGS=\"-I/Users/yusangeng/Downloads/busybox-1.37.0-wasm-build/wasi_include -D_WASI_EMULATED_SIGNAL -D_WASI_EMULATED_MMAN -D_WASI_EMULATED_PROCESS_CLOCKS -D_WASI_EMULATED_GETPID -Wno-implicit-function-declaration -Wno-int-conversion -Wno-unknown-attributes -Wno-unknown-pragmas -DSOCK_RDM=4 -DSOCK_SEQPACKET=5 -DSOCK_RAW=3 -DSOCK_DCCP=6 -DPRIO_PROCESS=0 -DPRIO_PGRP=1 -DPRIO_USER=2 -DF_GETLK=5 -DF_SETLK=6 -DF_SETLKW=7 -DF_RDLCK=0 -DF_WRLCK=1 -DF_UNLCK=2 -DO_NDELAY=0x800 -D__linux__ -DF_DUPFD=0 -UIP_PKTINFO -UIPV6_PKTINFO\"\n"
+"CONFIG_EXTRA_CFLAGS=\"-I/Users/yusangeng/Downloads/busybox-1.37.0-wasm-build/wasi_include -D_WASI_EMULATED_SIGNAL -D_WASI_EMULATED_MMAN -D_WASI_EMULATED_PROCESS_CLOCKS -D_WASI_EMULATED_GETPID -Wno-implicit-function-declaration -Wno-int-conversion -Wno-unknown-attributes -Wno-unknown-pragmas -DSOCK_RDM=4 -DSOCK_SEQPACKET=5 -DSOCK_RAW=3 -DSOCK_DCCP=6 -DPRIO_PROCESS=0 -DPRIO_PGRP=1 -DPRIO_USER=2 -DF_GETLK=5 -DF_SETLK=6 -DF_SETLKW=7 -DF_RDLCK=0 -DF_WRLCK=1 -DF_UNLCK=2 -DO_NDELAY=0x800 -D__linux__ -DF_DUPFD=0 -UIP_PKTINFO -UIPV6_PKTINFO -mllvm -wasm-enable-sjlj -mllvm -wasm-use-legacy-eh=0\"\n"
 "CONFIG_EXTRA_LDFLAGS=\"\"\n"
 "CONFIG_EXTRA_LDLIBS=\"wasi-emulated-signal wasi-emulated-mman wasi-emulated-process-clocks wasi-emulated-getpid\"\n"
 "# CONFIG_USE_PORTABLE_CODE is not set\n"

@@ -14,28 +14,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
-/* setjmp/longjmp stub — 不使用 wasm EH，避免 wasmtime legacy exceptions 问题。
- * longjmp 被调用时直接退出进程（正常路径不会触发 longjmp）。*/
-
-int setjmp(void *env) {
-    (void)env;
-    return 0;
-}
-
-void longjmp(void *env, int val) {
-    (void)env; (void)val;
-    _exit(128);
-    __builtin_unreachable();
-}
-
-int sigsetjmp(void *env, int savemask) {
-    (void)savemask;
-    return setjmp(env);
-}
-
-void siglongjmp(void *env, int val) {
-    longjmp(env, val);
-}
 
 /* ========== 信号管理 stub ========== */
 /* preview2 的 -lwasi-emulated-signal 和组件模型链接器有兼容性问题，
