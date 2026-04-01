@@ -7,9 +7,16 @@
 *.cmd
 *.map
 *.out
+*.obj
+*.wasm
 
 # 构建配置缓存
 .config.old
 .config.bak
 .kconfig.d
 .kernelrelease
+
+autoconf.h
+.config
+.config.old
+.config.bak

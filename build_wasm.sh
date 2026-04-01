@@ -39,7 +39,11 @@ done
 # 第三步：编译 wsh（WASM Shell，不走 BusyBox 构建系统）
 echo "[3/5] 编译 wsh..."
 $CC \
+  -I"$PROJ_DIR/shell" \
   -c "$PROJ_DIR/shell/wsh.c" -o wsh_main.o
+$CC \
+  -I"$PROJ_DIR/shell" \
+  -c "$PROJ_DIR/shell/wsh_pipe.c" -o wsh_pipe.o
 
 # 第四步：编译 stub
 echo "[4/5] 编译 wasi_stubs.c..."
@@ -55,13 +59,13 @@ echo "[5/5] 链接 busybox.wasm..."
 $CC -static -o "$OUTPUT" \
   -Wl,--gc-sections \
   -Wl,--whole-archive "${LIBS[@]}" -Wl,--no-whole-archive \
-  wsh_main.o wasi_stubs.o \
+  wsh_main.o wsh_pipe.o wasi_stubs.o \
   -lwasi-emulated-signal -lwasi-emulated-mman \
   -lwasi-emulated-process-clocks -lwasi-emulated-getpid \
   -lsetjmp \
   -Wl,--error-limit=0 -Wl,--allow-undefined
 
-rm -f wasi_stubs.o wsh_main.o
+rm -f wasi_stubs.o wsh_main.o wsh_pipe.o
 
 echo ""
 echo "=== 构建完成 ==="
