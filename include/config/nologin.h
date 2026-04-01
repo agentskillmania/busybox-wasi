@@ -1,1 +1,1 @@
-#define CONFIG_NOLOGIN 1
+#undef CONFIG_NOLOGIN

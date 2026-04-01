@@ -1,1 +1,1 @@
-#define CONFIG_ADD_SHELL 1
+#undef CONFIG_ADD_SHELL

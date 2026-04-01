@@ -1,1 +1,1 @@
-#define CONFIG_DEVMEM 1
+#undef CONFIG_DEVMEM

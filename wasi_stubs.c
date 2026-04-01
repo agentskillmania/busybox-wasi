@@ -14,36 +14,26 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
-/* setjmp/longjmp 桥接 — WASI 的 libsetjmp 只提供 __wasm_setjmp/__wasm_longjmp，
- * 但 busybox 编译出的 .o 文件引用 setjmp/longjmp 符号名。
- * 这里提供桥接函数，将 setjmp/longjmp 映射到 wasm 版本。*/
+/* setjmp/longjmp stub — 不使用 wasm EH，避免 wasmtime legacy exceptions 问题。
+ * longjmp 被调用时直接退出进程（正常路径不会触发 longjmp）。*/
 
-/* 声明 wasm 版本 */
-extern int __wasm_setjmp(void *env, void *label);
-extern void __wasm_longjmp(void *env, int val);
-extern int __wasm_setjmp_test(void *env);
-
-/* jmp_buf 大小需要和 wasi-libc 匹配 — 使用足够大的缓冲区 */
-typedef struct {
-    void *jb[32];
-} wasi_jmp_buf;
-
-int setjmp(wasi_jmp_buf *env) {
-    /* 简化实现：直接使用 __wasm_setjmp */
-    return __wasm_setjmp(env, NULL);
+int setjmp(void *env) {
+    (void)env;
+    return 0;
 }
 
-void longjmp(wasi_jmp_buf *env, int val) {
-    __wasm_longjmp(env, val);
+void longjmp(void *env, int val) {
+    (void)env; (void)val;
+    _exit(128);
     __builtin_unreachable();
 }
 
-int sigsetjmp(wasi_jmp_buf *env, int savemask) {
+int sigsetjmp(void *env, int savemask) {
     (void)savemask;
     return setjmp(env);
 }
 
-void siglongjmp(wasi_jmp_buf *env, int val) {
+void siglongjmp(void *env, int val) {
     longjmp(env, val);
 }
 
@@ -165,6 +155,11 @@ int setpgrp(void) { return 0; }
 
 int setgroups(size_t size, const gid_t *list) { (void)size; (void)list; return 0; }
 int getgroups(int size, gid_t *list) { (void)size; (void)list; return 0; }
+int getgrouplist(const char *user, gid_t group, gid_t *groups, int *ngroups) {
+    (void)user; (void)group; (void)groups;
+    if (ngroups) *ngroups = 1;
+    return 1;
+}
 int setresuid(uid_t ruid, uid_t euid, uid_t suid) { (void)ruid; (void)euid; (void)suid; return 0; }
 int setresgid(gid_t rgid, gid_t egid, gid_t sgid) { (void)rgid; (void)egid; (void)sgid; return 0; }
 

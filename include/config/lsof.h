@@ -1,1 +1,1 @@
-#define CONFIG_LSOF 1
+#undef CONFIG_LSOF

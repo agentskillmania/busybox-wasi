@@ -60,64 +60,25 @@
 
 <p>Currently available applets include:</p>
 
-<pre><code>[, [[, add-shell, adjtimex, arch, ascii, awk, base32, base64,
-basename, bc, bunzip2, bzcat, bzip2, cal, cat, chat, chmod,
-chpasswd, chpst, chroot, cksum, cmp, comm, cp, cpio, crc32, crond,
-crontab, cryptpw, cttyhack, cut, date, dc, dd, delgroup, deluser,
-devmem, df, dhcprelay, diff, dirname, dmesg, dnsd, dos2unix, dpkg,
-dpkg-deb, du, dumpleases, echo, ed, egrep, eject, env, envdir,
-envuidgid, expand, expr, factor, fakeidentd, fallocate, false,
-fatattr, fgrep, flock, fold, free, fsck.minix, fsync, ftpd, ftpget,
-ftpput, fuser, getopt, grep, groups, gunzip, gzip, halt, hd, head,
-hexdump, hexedit, hostid, hostname, httpd, id, ifdown, ifup,
-install, iostat, ipcalc, kill, killall, killall5, last, less, link,
-ln, login, logname, lpd, lpq, lpr, ls, lsof, lspci, lsscsi, lsusb,
-lzcat, lzma, lzop, makedevs, makemime, man, md5sum, mesg, microcom,
-mim, mkdir, mkdosfs, mke2fs, mkfifo, mkfs.ext2, mkfs.minix,
-mkfs.vfat, mkpasswd, mktemp, more, mountpoint, mpstat, mv, nice, nl,
-nmeter, nohup, nologin, nproc, ntpd, od, passwd, paste, patch,
-pgrep, pidof, pipe_progress, pivot_root, pkill, pmap, popmaildir,
-powertop, printenv, printf, ps, pscan, pstree, pwd, pwdx, rdate,
-rdev, readahead, readlink, readprofile, realpath, reformime,
-remove-shell, renice, resume, rev, rm, rmdir, rpm, rpm2cpio,
-rtcwake, run-parts, runlevel, runsvdir, rx, scriptreplay, sed, seq,
-setsid, setuidgid, sh, sha1sum, sha256sum, sha3sum, sha512sum,
-shred, shuf, sleep, smemcap, softlimit, sort, split, ssl_client,
-stat, strings, su, sulogin, sum, sv, svc, svlogd, svok, switch_root,
-sync, sysctl, tac, tail, tar, taskset, tcpsvd, tee, telnet, telnetd,
-test, tftp, tftpd, time, timeout, top, touch, tr, tree, true,
-truncate, ts, tsort, tty, ttysize, udhcpc, udhcpd, udpsvd, uevent,
-uname, unexpand, uniq, unix2dos, unlink, unlzma, unxz, unzip,
-uptime, users, usleep, uudecode, uuencode, vi, volname, w, wall,
-watch, wc, which, who, whoami, xxd, xz, xzcat, yes, zcat</code></pre>
+<pre><code>[, [[, arch, ascii, awk, base32, base64, basename, bc, bunzip2,
+bzcat, bzip2, cal, cat, chmod, chroot, cksum, cmp, comm, cp, cpio,
+crc32, cut, date, dc, dd, df, diff, dirname, dmesg, dos2unix, dpkg,
+dpkg-deb, du, echo, ed, egrep, env, expand, expr, factor, false,
+fgrep, fold, fsync, getopt, grep, groups, gunzip, gzip, hd, head,
+hexdump, install, link, ln, ls, lzcat, lzma, lzop, md5sum, mkdir,
+mkfifo, mktemp, mv, nice, nl, nohup, od, paste, patch,
+pipe_progress, printenv, printf, pwd, readlink, realpath, resume,
+rev, rm, rmdir, rpm, rpm2cpio, run-parts, sed, seq, sha1sum,
+sha256sum, sha3sum, sha512sum, shred, shuf, sleep, sort, split,
+stat, strings, sum, sync, tac, tail, tar, tee, test, timeout, touch,
+tr, true, truncate, tsort, tty, uname, unexpand, uniq, unix2dos,
+unlink, unlzma, unxz, unzip, usleep, uudecode, uuencode, vi, wc,
+which, xxd, xz, xzcat, yes, zcat</code></pre>
 
 <h1 id="COMMAND-DESCRIPTIONS">COMMAND DESCRIPTIONS</h1>
 
 <dl>
 
-<dt id="add-shell"><b>add-shell</b></dt>
-<dd>
-
-<p>add-shell SHELL...</p>
-
-<p>Add SHELLs to /etc/shells</p>
-
-</dd>
-<dt id="adjtimex"><b>adjtimex</b></dt>
-<dd>
-
-<p>adjtimex [-q] [-o OFS] [-f FREQ] [-p TCONST] [-t TICK]</p>
-
-<p>Read or set kernel time variables. See adjtimex(2)</p>
-
-<pre><code>-q      Quiet
--o OFF  Time offset, microseconds
--f FREQ Frequency adjust, integer kernel units (65536 is 1ppm)
--t TICK Microseconds per tick, usually 10000
-        (positive -t or -f values make clock run faster)
--p TCONST</code></pre>
-
-</dd>
 <dt id="arch"><b>arch</b></dt>
 <dd>
 
@@ -248,16 +209,6 @@ watch, wc, which, who, whoami, xxd, xz, xzcat, yes, zcat</code></pre>
 -A      Same as -vte</code></pre>
 
 </dd>
-<dt id="chat"><b>chat</b></dt>
-<dd>
-
-<p>chat EXPECT [SEND [EXPECT [SEND]]...]</p>
-
-<p>Useful for interacting with a modem connected to stdin/stdout. A script consists of &quot;expect-send&quot; argument pairs. Example:</p>
-
-<p>chat &#39;&#39; ATZ OK ATD123456 CONNECT &#39;&#39; ogin: pppuser word: ppppass &#39;~&#39;</p>
-
-</dd>
 <dt id="chmod"><b>chmod</b></dt>
 <dd>
 
@@ -269,45 +220,6 @@ watch, wc, which, who, whoami, xxd, xz, xzcat, yes, zcat</code></pre>
 -c      List changed files
 -v      Verbose
 -f      Hide errors</code></pre>
-
-</dd>
-<dt id="chpasswd"><b>chpasswd</b></dt>
-<dd>
-
-<p>chpasswd [-me] [-c ALG] [-R DIR]</p>
-
-<p>Read user:password from stdin and update /etc/passwd</p>
-
-<pre><code>-e      Supplied passwords are in encrypted form
--m      Encrypt using md5, not des
--c ALG  des,md5,sha256/512 (default des)
--R DIR  Directory to chroot into</code></pre>
-
-</dd>
-<dt id="chpst"><b>chpst</b></dt>
-<dd>
-
-<p>chpst [-vP012] [-u USER[:GRP]] [-U USER[:GRP]] [-e DIR] [-/ DIR] [-n NICE] [-m BYTES] [-d BYTES] [-o N] [-p N] [-f BYTES] [-c BYTES] PROG ARGS</p>
-
-<p>Change the process state, run PROG</p>
-
-<pre><code>-u USER[:GRP]   Set uid and gid
--U USER[:GRP]   Set $UID and $GID in environment
--e DIR          Set environment variables as specified by files
-                in DIR: file=1st_line_of_file
--/ DIR          Chroot to DIR
--n NICE         Add NICE to nice value
--m BYTES        Same as -d BYTES -s BYTES -l BYTES
--d BYTES        Limit data segment
--o N            Limit number of open files per process
--p N            Limit number of processes per uid
--f BYTES        Limit output file sizes
--c BYTES        Limit core file size
--v              Verbose
--P              Create new process group
--0              Close stdin
--1              Close stdout
--2              Close stderr</code></pre>
 
 </dd>
 <dt id="chroot"><b>chroot</b></dt>
@@ -409,55 +321,6 @@ Options:
 <p>Calculate CRC32 checksum of FILEs</p>
 
 </dd>
-<dt id="crond"><b>crond</b></dt>
-<dd>
-
-<p>crond [-fbS] [-l N] [-d N] [-L LOGFILE] [-c DIR]</p>
-
-<pre><code>-f      Foreground
--b      Background (default)
--S      Log to syslog (default)
--l N    Set log level. Most verbose 0, default 8
--d N    Set log level, log to stderr
--L FILE Log to FILE
--c DIR  Cron dir. Default:/var/spool/cron/crontabs</code></pre>
-
-</dd>
-<dt id="crontab"><b>crontab</b></dt>
-<dd>
-
-<p>crontab [-c DIR] [-u USER] [-ler]|[FILE]</p>
-
-<pre><code>-c      Crontab directory
--u      User
--l      List crontab
--e      Edit crontab
--r      Delete crontab
-FILE    Replace crontab by FILE (&#39;-&#39;: stdin)</code></pre>
-
-</dd>
-<dt id="cryptpw"><b>cryptpw</b></dt>
-<dd>
-
-<p>cryptpw [-P FD] [-m TYPE] [-S SALT] [PASSWORD] [SALT]</p>
-
-<p>Print crypt(3) hashed PASSWORD</p>
-
-<pre><code>-P N    Read password from fd N
--m TYPE des,md5,sha256/512 (default des)
--S SALT</code></pre>
-
-</dd>
-<dt id="cttyhack"><b>cttyhack</b></dt>
-<dd>
-
-<p>cttyhack [PROG ARGS]</p>
-
-<p>Give PROG a controlling tty if possible. Example for /etc/inittab (for busybox init): ::respawn:/bin/cttyhack /bin/sh Giving controlling tty to shell running with PID 1: $ exec cttyhack sh Starting interactive shell from boot shell script:</p>
-
-<pre><code>setsid cttyhack sh</code></pre>
-
-</dd>
 <dt id="cut"><b>cut</b></dt>
 <dd>
 
@@ -543,34 +406,6 @@ status=none     Suppress all output</code></pre>
 <p>N may be suffixed by c (1), w (2), b (512), kB (1000), k (1024), MB, M, GB, G</p>
 
 </dd>
-<dt id="delgroup"><b>delgroup</b></dt>
-<dd>
-
-<p>delgroup [USER] GROUP</p>
-
-<p>Delete group GROUP from the system or user USER from group GROUP</p>
-
-</dd>
-<dt id="deluser"><b>deluser</b></dt>
-<dd>
-
-<p>deluser [--remove-home] USER</p>
-
-<p>Delete USER from the system</p>
-
-</dd>
-<dt id="devmem"><b>devmem</b></dt>
-<dd>
-
-<p>devmem ADDRESS [WIDTH [VALUE]]</p>
-
-<p>Read/write from physical address</p>
-
-<pre><code>ADDRESS Address to act upon
-WIDTH   Width (8/16/...)
-VALUE   Data to be written</code></pre>
-
-</dd>
 <dt id="df"><b>df</b></dt>
 <dd>
 
@@ -587,14 +422,6 @@ VALUE   Data to be written</code></pre>
 -a      Show all filesystems
 -i      Inodes
 -B SIZE Blocksize</code></pre>
-
-</dd>
-<dt id="dhcprelay"><b>dhcprelay</b></dt>
-<dd>
-
-<p>dhcprelay CLIENT_IFACE[,CLIENT_IFACE2]... SERVER_IFACE [SERVER_IP]</p>
-
-<p>Relay DHCP requests between clients and server. Without SERVER_IP, requests are broadcast on SERVER_IFACE.</p>
 
 </dd>
 <dt id="diff"><b>diff</b></dt>
@@ -640,25 +467,6 @@ VALUE   Data to be written</code></pre>
 -n LEVEL        Set console logging level
 -s SIZE         Buffer size
 -r              Print raw message buffer</code></pre>
-
-</dd>
-<dt id="dnsd"><b>dnsd</b></dt>
-<dd>
-
-<p>dnsd [-dvs] [-c CONFFILE] [-t TTL_SEC] [-p PORT] [-i ADDR]</p>
-
-<p>Small static DNS server daemon</p>
-
-<pre><code>-c FILE Config file
--t SEC  TTL
--p PORT Listen on PORT
--i ADDR Listen on ADDR
--d      Daemonize
--v      Verbose
--s      Send successful replies only. Use this if you want
-        to use /etc/resolv.conf with two nameserver lines:
-                nameserver DNSD_SERVER
-                nameserver NORMAL_DNS_SERVER</code></pre>
 
 </dd>
 <dt id="dos2unix"><b>dos2unix</b></dt>
@@ -725,19 +533,6 @@ VALUE   Data to be written</code></pre>
 -k      Sizes in kilobytes (default)</code></pre>
 
 </dd>
-<dt id="dumpleases"><b>dumpleases</b></dt>
-<dd>
-
-<p>dumpleases [-r|-a] [-d] [-f LEASEFILE]</p>
-
-<p>Display DHCP leases granted by udhcpd</p>
-
-<pre><code>-f FILE Lease file
--r      Show remaining time
--a      Show expiration time
--d      Show time in seconds</code></pre>
-
-</dd>
 <dt id="echo"><b>echo</b></dt>
 <dd>
 
@@ -756,17 +551,6 @@ VALUE   Data to be written</code></pre>
 <p>ed [-p PROMPT] [-s] [FILE]</p>
 
 </dd>
-<dt id="eject"><b>eject</b></dt>
-<dd>
-
-<p>eject [-t] [-T] [DEVICE]</p>
-
-<p>Eject DEVICE or default /dev/cdrom</p>
-
-<pre><code>-t      Close tray
--T      Open/close tray (toggle)</code></pre>
-
-</dd>
 <dt id="env"><b>env</b></dt>
 <dd>
 
@@ -777,22 +561,6 @@ VALUE   Data to be written</code></pre>
 <pre><code>-, -i   Start with empty environment
 -0      NUL terminated output
 -u NAME Remove variable from environment</code></pre>
-
-</dd>
-<dt id="envdir"><b>envdir</b></dt>
-<dd>
-
-<p>envdir DIR PROG ARGS</p>
-
-<p>Set various environment variables as specified by files in the directory DIR, run PROG</p>
-
-</dd>
-<dt id="envuidgid"><b>envuidgid</b></dt>
-<dd>
-
-<p>envuidgid USER PROG ARGS</p>
-
-<p>Set $UID to USER&#39;s uid and $GID to USER&#39;s gid, run PROG</p>
 
 </dd>
 <dt id="expand"><b>expand</b></dt>
@@ -849,61 +617,6 @@ quote TOKEN             Interpret TOKEN as a string, even if
 <p>Print prime factors</p>
 
 </dd>
-<dt id="fakeidentd"><b>fakeidentd</b></dt>
-<dd>
-
-<p>fakeidentd [-fiw] [-b ADDR] [STRING]</p>
-
-<p>Provide fake ident (auth) service</p>
-
-<pre><code>-f      Run in foreground
--i      Inetd mode
--w      Inetd &#39;wait&#39; mode
--b ADDR Bind to specified address
-STRING  Ident answer string (default: nobody)</code></pre>
-
-</dd>
-<dt id="fallocate"><b>fallocate</b></dt>
-<dd>
-
-<p>fallocate [-o OFS] -l LEN FILE</p>
-
-<p>Preallocate space for FILE</p>
-
-<pre><code>-o OFS  Offset of range
--l LEN  Length of range</code></pre>
-
-</dd>
-<dt id="fatattr"><b>fatattr</b></dt>
-<dd>
-
-<p>fatattr [-+rhsvda] FILE...</p>
-
-<p>Change file attributes on FAT filesystem</p>
-
-<pre><code>-       Clear attributes
-+       Set attributes
-r       Read only
-h       Hidden
-s       System
-v       Volume label
-d       Directory
-a       Archive</code></pre>
-
-</dd>
-<dt id="flock"><b>flock</b></dt>
-<dd>
-
-<p>flock [-sxun] FD | { FILE [-c] PROG ARGS }</p>
-
-<p>[Un]lock file descriptor, or lock FILE, run PROG</p>
-
-<pre><code>-s      Shared lock
--x      Exclusive lock (default)
--u      Unlock FD
--n      Fail rather than wait</code></pre>
-
-</dd>
 <dt id="fold"><b>fold</b></dt>
 <dd>
 
@@ -916,30 +629,6 @@ a       Archive</code></pre>
 -w      Use WIDTH columns instead of 80</code></pre>
 
 </dd>
-<dt id="free"><b>free</b></dt>
-<dd>
-
-<p>free [-bkmgh]</p>
-
-<p>Display free and used memory</p>
-
-</dd>
-<dt id="fsck.minix"><b>fsck.minix</b></dt>
-<dd>
-
-<p>fsck.minix [-larvsmf] BLOCKDEV</p>
-
-<p>Check MINIX filesystem</p>
-
-<pre><code>-l      List all filenames
--r      Perform interactive repairs
--a      Perform automatic repairs
--v      Verbose
--s      Output superblock information
--m      Show &quot;mode not cleared&quot; warnings
--f      Force file system check</code></pre>
-
-</dd>
 <dt id="fsync"><b>fsync</b></dt>
 <dd>
 
@@ -948,64 +637,6 @@ a       Archive</code></pre>
 <p>Write all buffered blocks in FILEs to disk</p>
 
 <pre><code>-d      Avoid syncing metadata</code></pre>
-
-</dd>
-<dt id="ftpd"><b>ftpd</b></dt>
-<dd>
-
-<p>ftpd [-wvS] [-a USER] [-t SEC] [-T SEC] [DIR]</p>
-
-<p>FTP server. Chroots to DIR, if this fails (run by non-root), cds to it. It is an inetd service, inetd.conf line: 21 stream tcp nowait root ftpd ftpd /files/to/serve Can be run from tcpsvd:</p>
-
-<pre><code>tcpsvd -vE 0.0.0.0 21 ftpd /files/to/serve
-
--w      Allow upload
--A      No login required, client access occurs under ftpd&#39;s UID
--a USER Enable &#39;anonymous&#39; login and map it to USER
--v      Log errors to stderr. -vv: verbose log
--S      Log errors to syslog. -SS: verbose log
--t,-T N Idle and absolute timeout</code></pre>
-
-</dd>
-<dt id="ftpget"><b>ftpget</b></dt>
-<dd>
-
-<p>ftpget [OPTIONS] HOST [LOCAL_FILE] REMOTE_FILE</p>
-
-<p>Download a file via FTP</p>
-
-<pre><code>-c      Continue previous transfer
--v      Verbose
--u USER Username
--p PASS Password
--P PORT</code></pre>
-
-</dd>
-<dt id="ftpput"><b>ftpput</b></dt>
-<dd>
-
-<p>ftpput [OPTIONS] HOST [REMOTE_FILE] LOCAL_FILE</p>
-
-<p>Upload a file to a FTP server</p>
-
-<pre><code>-v      Verbose
--u USER Username
--p PASS Password
--P PORT</code></pre>
-
-</dd>
-<dt id="fuser"><b>fuser</b></dt>
-<dd>
-
-<p>fuser [-msk46] [-SIGNAL] FILE or PORT/PROTO</p>
-
-<p>Find processes which use FILEs or PORTs</p>
-
-<pre><code>-m      Find processes which use same fs as FILEs
--4,-6   Search only IPv4/IPv6 space
--s      Don&#39;t display PIDs
--k      Kill found processes
--SIGNAL Signal to send (default: KILL)</code></pre>
 
 </dd>
 <dt id="getopt"><b>getopt</b></dt>
@@ -1095,19 +726,6 @@ a       Archive</code></pre>
 -t      Test integrity</code></pre>
 
 </dd>
-<dt id="halt"><b>halt</b></dt>
-<dd>
-
-<p>halt [-d DELAY] [-nfw]</p>
-
-<p>Halt the system</p>
-
-<pre><code>-d SEC  Delay interval
--n      Do not sync
--f      Force (don&#39;t go through init)
--w      Only write a wtmp record</code></pre>
-
-</dd>
 <dt id="hd"><b>hd</b></dt>
 <dd>
 
@@ -1151,98 +769,6 @@ a       Archive</code></pre>
 -s OFFSET       Skip OFFSET bytes</code></pre>
 
 </dd>
-<dt id="hexedit"><b>hexedit</b></dt>
-<dd>
-
-<p>hexedit FILE</p>
-
-<p>Edit FILE in hexadecimal</p>
-
-</dd>
-<dt id="hostid"><b>hostid</b></dt>
-<dd>
-
-<p>hostid</p>
-
-<p>Print out a unique 32-bit identifier for the machine</p>
-
-</dd>
-<dt id="hostname"><b>hostname</b></dt>
-<dd>
-
-<p>hostname [-sidf] [HOSTNAME | -F FILE]</p>
-
-<p>Show or set hostname or DNS domain name</p>
-
-<pre><code>-s      Short
--i      Addresses for the hostname
--d      DNS domain name
--f      Fully qualified domain name
--F FILE Use FILE&#39;s content as hostname</code></pre>
-
-</dd>
-<dt id="httpd"><b>httpd</b></dt>
-<dd>
-
-<p>httpd [-ifv[v]] [-c CONFFILE] [-p [IP:]PORT] [-u USER[:GRP]] [-r REALM] [-h HOME] or httpd -d/-e/-m STRING</p>
-
-<p>Listen for incoming HTTP requests</p>
-
-<pre><code>-i              Inetd mode
--f              Run in foreground
--v[v]           Verbose
--p [IP:]PORT    Bind to IP:PORT (default *:80)
--u USER[:GRP]   Set uid/gid after binding to port
--r REALM        Authentication Realm for Basic Authentication
--h HOME         Home directory (default .)
--c FILE         Configuration file (default {/etc,HOME}/httpd.conf)
--m STRING       MD5 crypt STRING
--e STRING       HTML encode STRING
--d STRING       URL decode STRING</code></pre>
-
-</dd>
-<dt id="id"><b>id</b></dt>
-<dd>
-
-<p>id [-ugGnr] [USER]</p>
-
-<p>Print information about USER or the current user</p>
-
-<pre><code>-u      User ID
--g      Group ID
--G      Supplementary group IDs
--n      Print names instead of numbers
--r      Print real ID instead of effective ID</code></pre>
-
-</dd>
-<dt id="ifdown"><b>ifdown</b></dt>
-<dd>
-
-<p>ifdown [-nmvf] [-i FILE] -a | IFACE...</p>
-
-<pre><code>-a      Deconfigure all interfaces
--i FILE Use FILE instead of /etc/network/interfaces
--n      Dry run
-        (note: doesn&#39;t disable mappings)
--m      Don&#39;t run any mappings
--v      Print out what would happen before doing it
--f      Force</code></pre>
-
-</dd>
-<dt id="ifup"><b>ifup</b></dt>
-<dd>
-
-<p>ifup [-nmvf] [-i FILE] -a | IFACE...</p>
-
-<pre><code>-a      Configure all interfaces
--i FILE Use FILE instead of /etc/network/interfaces
--n      Dry run
-        (note: doesn&#39;t disable mappings)
--m      Don&#39;t run any mappings
--v      Print out what would happen before doing it
--f      Force</code></pre>
-
-</dd>
 <dt id="install"><b>install</b></dt>
 <dd>
 
@@ -1259,97 +785,6 @@ a       Archive</code></pre>
 -g GRP  Set group ownership
 -m MODE Set permissions
 -t DIR  Install to DIR</code></pre>
-
-</dd>
-<dt id="iostat"><b>iostat</b></dt>
-<dd>
-
-<p>iostat [-c] [-d] [-t] [-z] [-k|-m] [ALL|BLOCKDEV...] [INTERVAL [COUNT]]</p>
-
-<p>Report CPU and I/O statistics</p>
-
-<pre><code>-c      Show CPU utilization
--d      Show device utilization
--t      Print current time
--z      Omit devices with no activity
--k      Use kb/s
--m      Use Mb/s</code></pre>
-
-</dd>
-<dt id="ipcalc"><b>ipcalc</b></dt>
-<dd>
-
-<p>ipcalc [-bnmphs] ADDRESS[/PREFIX] [NETMASK]</p>
-
-<p>Calculate and display network settings from IP address</p>
-
-<pre><code>-b      Broadcast address
--n      Network address
--m      Default netmask for IP
--p      Prefix for IP/NETMASK
--h      Resolved host name
--s      No error messages</code></pre>
-
-</dd>
-<dt id="kill"><b>kill</b></dt>
-<dd>
-
-<p>kill [-l] [-SIG] PID...</p>
-
-<p>Send a signal (default: TERM) to given PIDs</p>
-
-<pre><code>-l      List all signal names and numbers</code></pre>
-
-</dd>
-<dt id="killall"><b>killall</b></dt>
-<dd>
-
-<p>killall [-lq] [-SIG] PROCESS_NAME...</p>
-
-<p>Send a signal (default: TERM) to given processes</p>
-
-<pre><code>-l      List all signal names and numbers
--q      Don&#39;t complain if no processes were killed</code></pre>
-
-</dd>
-<dt id="killall5"><b>killall5</b></dt>
-<dd>
-
-<p>killall5 [-l] [-SIG] [-o PID]...</p>
-
-<p>Send a signal (default: TERM) to all processes outside current session</p>
-
-<pre><code>-l      List all signal names and numbers
--o PID  Don&#39;t signal this PID</code></pre>
-
-</dd>
-<dt id="last"><b>last</b></dt>
-<dd>
-
-<p>last [-HW] [-f FILE]</p>
-
-<p>Show listing of the last users that logged into the system</p>
-
-<pre><code>-W      Display with no host column truncation
--f FILE Read from FILE instead of /var/log/wtmp</code></pre>
-
-</dd>
-<dt id="less"><b>less</b></dt>
-<dd>
-
-<p>less [-EFIMmNSRh~] [FILE]...</p>
-
-<p>View FILE (or stdin) one screenful at a time</p>
-
-<pre><code>-E      Quit once the end of a file is reached
--F      Quit if entire file fits on first screen
--I      Ignore case in all searches
--M,-m   Display status line with line numbers
-        and percentage through the file
--N      Prefix line number to each line
--S      Truncate long lines
--R      Remove color escape codes in input
--~      Suppress ~s displayed past EOF</code></pre>
 
 </dd>
 <dt id="link"><b>link</b></dt>
@@ -1374,60 +809,6 @@ a       Archive</code></pre>
 -S SUF  Use suffix instead of ~ when making backup files
 -T      Treat LINK as a file, not DIR
 -v      Verbose</code></pre>
-
-</dd>
-<dt id="login"><b>login</b></dt>
-<dd>
-
-<p>login [-p] [-h HOST] [[-f] USER]</p>
-
-<p>Begin a new session on the system</p>
-
-<pre><code>-f      Don&#39;t authenticate (user already authenticated)
--h HOST Host user came from (for network logins)
--p      Preserve environment</code></pre>
-
-<p>$LOGIN_TIMEOUT Seconds (default 60, 0 - disable) $LOGIN_PRE_SUID_SCRIPT Execute before user ID change</p>
-
-</dd>
-<dt id="logname"><b>logname</b></dt>
-<dd>
-
-<p>logname</p>
-
-<p>Print the name of the current user</p>
-
-</dd>
-<dt id="lpd"><b>lpd</b></dt>
-<dd>
-
-<p>lpd SPOOLDIR [HELPER [ARGS]]</p>
-
-<p>SPOOLDIR must contain (symlinks to) device nodes or directories with names matching print queue names. In the first case, jobs are sent directly to the device. Otherwise each job is stored in queue directory and HELPER program is called. Name of file to print is passed in $DATAFILE variable. Example:</p>
-
-<pre><code>tcpsvd -E 0 515 softlimit -m 999999 lpd /var/spool ./print</code></pre>
-
-</dd>
-<dt id="lpq"><b>lpq</b></dt>
-<dd>
-
-<p>lpq [-P queue[@host[:port]]] [-U USERNAME] [-d JOBID]... [-fs]</p>
-
-<pre><code>-P      lp service to connect to (else uses $PRINTER)
--d      Delete jobs
--f      Force any waiting job to be printed
--s      Short display</code></pre>
-
-</dd>
-<dt id="lpr"><b>lpr</b></dt>
-<dd>
-
-<p>lpr -P queue[@host[:port]] -U USERNAME -J TITLE -Vmh [FILE]...</p>
-
-<pre><code>-P      lp service to connect to (else uses $PRINTER)
--m      Send mail on completion
--h      Print banner page too
--V      Verbose</code></pre>
 
 </dd>
 <dt id="ls"><b>ls</b></dt>
@@ -1467,25 +848,6 @@ a       Archive</code></pre>
 --color[={always,never,auto}]</code></pre>
 
 </dd>
-<dt id="lsof"><b>lsof</b></dt>
-<dd>
-
-<p>lsof</p>
-
-<p>Show all open files</p>
-
-</dd>
-<dt id="lspci"><b>lspci</b></dt>
-<dd>
-
-<p>lspci [-mk]</p>
-
-<p>List all PCI devices</p>
-
-<pre><code>-m      Parsable output
--k      Show driver</code></pre>
-
-</dd>
 <dt id="lzcat"><b>lzcat</b></dt>
 <dd>
 
@@ -1523,45 +885,6 @@ a       Archive</code></pre>
 -C      Also write checksum of compressed block</code></pre>
 
 </dd>
-<dt id="makedevs"><b>makedevs</b></dt>
-<dd>
-
-<p>makedevs [-d device_table] rootdir</p>
-
-<p>Create a range of special files as specified in a device table. Device table entries take the form of:</p>
-
-<p>&lt;name&gt; &lt;type&gt; &lt;mode&gt; &lt;uid&gt; &lt;gid&gt; &lt;major&gt; &lt;minor&gt; &lt;start&gt; &lt;inc&gt; &lt;count&gt; Where name is the file name, type can be one of: f Regular file d Directory c Character device b Block device p Fifo (named pipe) uid is the user id for the target file, gid is the group id for the target file. The rest of the entries (major, minor, etc) apply to to device special files. A &#39;-&#39; may be used for blank entries.</p>
-
-</dd>
-<dt id="makemime"><b>makemime</b></dt>
-<dd>
-
-<p>makemime [OPTIONS] [FILE]...</p>
-
-<p>Create multipart MIME-encoded message from FILEs</p>
-
-<pre><code>-o FILE Output. Default: stdout
--a HDR  Add header(s). Examples:
-        &quot;From: user@host.org&quot;, &quot;Date: `date -R`&quot;
--c CT   Content type. Default: application/octet-stream
--C CS   Charset. Default: us-ascii</code></pre>
-
-<p>Other options are silently ignored</p>
-
-</dd>
-<dt id="man"><b>man</b></dt>
-<dd>
-
-<p>man [-aw] [SECTION] MANPAGE[.SECTION]...</p>
-
-<p>Display manual page</p>
-
-<pre><code>-a      Display all pages
--w      Show page locations</code></pre>
-
-<p>$COLUMNS overrides output width</p>
-
-</dd>
 <dt id="md5sum"><b>md5sum</b></dt>
 <dd>
 
@@ -1572,38 +895,6 @@ a       Archive</code></pre>
 <pre><code>-c      Check sums against list in FILEs
 -s      Don&#39;t output anything, status code shows success
 -w      Warn about improperly formatted checksum lines</code></pre>
-
-</dd>
-<dt id="mesg"><b>mesg</b></dt>
-<dd>
-
-<p>mesg [y|n]</p>
-
-<p>Control write access to your terminal y Allow write access to your terminal n Disallow write access to your terminal</p>
-
-</dd>
-<dt id="microcom"><b>microcom</b></dt>
-<dd>
-
-<p>microcom [-d DELAY_MS] [-t TIMEOUT_MS ] [-s SPEED] [-X] TTY</p>
-
-<p>Copy bytes from stdin to TTY and from TTY to stdout</p>
-
-<pre><code>-d DELAY        Wait up to DELAY ms for TTY output before sending
-                every next byte to it
--t TIMEOUT      Exit if both stdin and TTY are silent for TIMEOUT ms
--s SPEED        Set serial line to SPEED
--X              Disable special meaning of NUL and Ctrl-X from stdin</code></pre>
-
-</dd>
-<dt id="mim"><b>mim</b></dt>
-<dd>
-
-<p>mim [-f FILE] [SHELL_OPTIONS] [TARGET] ...</p>
-
-<p>Run a script from a Makefile-like specification file</p>
-
-<pre><code>-f FILE         Spec file (default Mimfile)</code></pre>
 
 </dd>
 <dt id="mkdir"><b>mkdir</b></dt>
@@ -1617,31 +908,6 @@ a       Archive</code></pre>
 -p      No error if exists; make parent directories as needed</code></pre>
 
 </dd>
-<dt id="mkdosfs"><b>mkdosfs</b></dt>
-<dd>
-
-<p>mkdosfs [-v] [-n LABEL] BLOCKDEV [KBYTES]</p>
-
-<p>Make a FAT32 filesystem</p>
-
-<pre><code>-v      Verbose
--n LBL  Volume label</code></pre>
-
-</dd>
-<dt id="mke2fs"><b>mke2fs</b></dt>
-<dd>
-
-<p>mke2fs [-Fn] [-b BLK_SIZE] [-i INODE_RATIO] [-I INODE_SIZE] [-m RESERVED_PERCENT] [-L LABEL] BLOCKDEV [KBYTES]</p>
-
-<pre><code>-b BLK_SIZE     Block size, bytes
--F              Force
--i RATIO        Max number of files is filesystem_size / RATIO
--I BYTES        Inode size (min 128)
--L LBL          Volume label
--m PERCENT      Percent of blocks to reserve for admin
--n              Dry run</code></pre>
-
-</dd>
 <dt id="mkfifo"><b>mkfifo</b></dt>
 <dd>
 
@@ -1650,57 +916,6 @@ a       Archive</code></pre>
 <p>Create named pipe</p>
 
 <pre><code>-m MODE Mode (default a=rw)</code></pre>
-
-</dd>
-<dt id="mkfs.ext2"><b>mkfs.ext2</b></dt>
-<dd>
-
-<p>mkfs.ext2 [-Fn] [-b BLK_SIZE] [-i INODE_RATIO] [-I INODE_SIZE] [-m RESERVED_PERCENT] [-L LABEL] BLOCKDEV [KBYTES]</p>
-
-<pre><code>-b BLK_SIZE     Block size, bytes
--F              Force
--i RATIO        Max number of files is filesystem_size / RATIO
--I BYTES        Inode size (min 128)
--L LBL          Volume label
--m PERCENT      Percent of blocks to reserve for admin
--n              Dry run</code></pre>
-
-</dd>
-<dt id="mkfs.minix"><b>mkfs.minix</b></dt>
-<dd>
-
-<p>mkfs.minix [-c | -l FILE] [-nXX] [-iXX] BLOCKDEV [KBYTES]</p>
-
-<p>Make a MINIX filesystem</p>
-
-<pre><code>-c              Check device for bad blocks
--n [14|30]      Maximum length of filenames
--i INODES       Number of inodes for the filesystem
--l FILE         Read bad blocks list from FILE
--v              Make version 2 filesystem</code></pre>
-
-</dd>
-<dt id="mkfs.vfat"><b>mkfs.vfat</b></dt>
-<dd>
-
-<p>mkfs.vfat [-v] [-n LABEL] BLOCKDEV [KBYTES]</p>
-
-<p>Make a FAT32 filesystem</p>
-
-<pre><code>-v      Verbose
--n LBL  Volume label</code></pre>
-
-</dd>
-<dt id="mkpasswd"><b>mkpasswd</b></dt>
-<dd>
-
-<p>mkpasswd [-P FD] [-m TYPE] [-S SALT] [PASSWORD] [SALT]</p>
-
-<p>Print crypt(3) hashed PASSWORD</p>
-
-<pre><code>-P N    Read password from fd N
--m TYPE des,md5,sha256/512 (default des)
--S SALT</code></pre>
 
 </dd>
 <dt id="mktemp"><b>mktemp</b></dt>
@@ -1717,40 +932,6 @@ a       Archive</code></pre>
 -u      Do not create anything; print a name</code></pre>
 
 <p>Base directory is: -p DIR, else $TMPDIR, else /tmp</p>
-
-</dd>
-<dt id="more"><b>more</b></dt>
-<dd>
-
-<p>more [FILE]...</p>
-
-<p>View FILE (or stdin) one screenful at a time</p>
-
-</dd>
-<dt id="mountpoint"><b>mountpoint</b></dt>
-<dd>
-
-<p>mountpoint [-q] { [-dn] DIR | -x DEVICE }</p>
-
-<p>Check if DIR is a mountpoint</p>
-
-<pre><code>-q      Quiet
--d      Print major:minor of the filesystem
--n      Print device name of the filesystem
--x      Print major:minor of DEVICE</code></pre>
-
-</dd>
-<dt id="mpstat"><b>mpstat</b></dt>
-<dd>
-
-<p>mpstat [-A] [-I SUM|CPU|ALL|SCPU] [-u] [-P num|ALL] [INTERVAL [COUNT]]</p>
-
-<p>Per-processor statistics</p>
-
-<pre><code>-A                      Same as -I ALL -u -P ALL
--I SUM|CPU|ALL|SCPU     Report interrupt statistics
--P num|ALL              Processor to monitor
--u                      Report CPU utilization</code></pre>
 
 </dd>
 <dt id="mv"><b>mv</b></dt>
@@ -1791,37 +972,6 @@ a       Archive</code></pre>
 -w N            Width of line numbers</code></pre>
 
 </dd>
-<dt id="nmeter"><b>nmeter</b></dt>
-<dd>
-
-<p>nmeter [-d MSEC] FORMAT_STRING</p>
-
-<p>Monitor system in real time</p>
-
-<pre><code>-d MSEC        Milliseconds between updates, default:1000, none:-1</code></pre>
-
-<p>Format specifiers:</p>
-
-<pre><code>%Nc or %[cN]   CPU. N - bar size (default 10)
-               (displays: S:system U:user N:niced D:iowait I:irq i:softirq)
-%[nINTERFACE]  Network INTERFACE
-%m             Allocated memory
-%[md]          Dirty file-backed memory
-%[mw]          Memory being written to storage
-%[mf]          Free memory
-%[mt]          Total memory
-%s             Allocated swap
-%f             Number of used file descriptors
-%Ni            Total/specific IRQ rate
-%x             Context switch rate
-%p             Forks
-%[pn]          # of processes
-%b             Block io
-%Nt            Time (with N decimal points)
-%NT            Zero-based timestamp (with N decimal points)
-%r             Print &lt;cr&gt; instead of &lt;lf&gt; at EOL</code></pre>
-
-</dd>
 <dt id="nohup"><b>nohup</b></dt>
 <dd>
 
@@ -1830,67 +980,12 @@ a       Archive</code></pre>
 <p>Run PROG immune to hangups, with output to a non-tty</p>
 
 </dd>
-<dt id="nologin"><b>nologin</b></dt>
-<dd>
-
-<p>nologin</p>
-
-<p>Politely refuse a login</p>
-
-</dd>
-<dt id="nproc"><b>nproc</b></dt>
-<dd>
-
-<p>nproc [--all] [--ignore=N]</p>
-
-<p>Print number of available CPUs</p>
-
-<pre><code>--all           Number of installed CPUs
---ignore=N      Exclude N CPUs</code></pre>
-
-</dd>
-<dt id="ntpd"><b>ntpd</b></dt>
-<dd>
-
-<p>ntpd [-dnqNwl] [-I IFACE] [-S PROG] [-k KEYFILE] [-p [keyno:N:]PEER]...</p>
-
-<p>NTP client/server</p>
-
-<pre><code>-d[d]   Verbose
--n      Run in foreground
--q      Quit after clock is set
--N      Run at high priority
--w      Do not set time (only query peers), implies -n
--S PROG Run PROG after stepping time, stratum change, and every 11 min
--k FILE Key file (ntp.keys compatible)
--p [keyno:NUM:]PEER
-        Obtain time from PEER (may be repeated)
-        Use key NUM for authentication
-        If -p is not given, &#39;server HOST&#39; lines
-        from /etc/ntp.conf are used
--l      Also run as server on port 123
--I IFACE Bind server to IFACE, implies -l</code></pre>
-
-</dd>
 <dt id="od"><b>od</b></dt>
 <dd>
 
 <p>od [-abcdfhilovxs] [-t TYPE] [-A RADIX] [-N SIZE] [-j SKIP] [-S MINSTR] [-w WIDTH] [FILE]...</p>
 
 <p>Print FILEs (or stdin) unambiguously, as octal bytes by default</p>
-
-</dd>
-<dt id="passwd"><b>passwd</b></dt>
-<dd>
-
-<p>passwd [-a ALG] [-dlu] [USER]</p>
-
-<p>Change USER&#39;s password (default: current user)</p>
-
-<pre><code>-a ALG  des,md5,sha256/512 (default des)
--d      Set password to &#39;&#39;
--l      Lock (disable) account
--u      Unlock (enable) account</code></pre>
 
 </dd>
 <dt id="paste"><b>paste</b></dt>
@@ -1917,98 +1012,6 @@ a       Archive</code></pre>
 --dry-run       Don&#39;t actually change files</code></pre>
 
 </dd>
-<dt id="pgrep"><b>pgrep</b></dt>
-<dd>
-
-<p>pgrep [-flanovx] [-s SID|-P PPID|PATTERN]</p>
-
-<p>Display process(es) selected by regex PATTERN</p>
-
-<pre><code>-l      Show command name too
--a      Show command line too
--f      Match against entire command line
--n      Show the newest process only
--o      Show the oldest process only
--v      Negate the match
--x      Match whole name (not substring)
--s      Match session ID (0 for current)
--P      Match parent process ID</code></pre>
-
-</dd>
-<dt id="pidof"><b>pidof</b></dt>
-<dd>
-
-<p>pidof [-s] [-o PID] [NAME]...</p>
-
-<p>List PIDs of all processes with names that match NAMEs</p>
-
-<pre><code>-s      Show only one PID
--o PID  Omit given pid
-        Use %PPID to omit pid of pidof&#39;s parent</code></pre>
-
-</dd>
-<dt id="pivot_root"><b>pivot_root</b></dt>
-<dd>
-
-<p>pivot_root NEW_ROOT PUT_OLD</p>
-
-<p>Move the current root file system to PUT_OLD and make NEW_ROOT the new root file system</p>
-
-</dd>
-<dt id="pkill"><b>pkill</b></dt>
-<dd>
-
-<p>pkill [-l|-SIGNAL] [-xfvnoe] [-s SID|-P PPID|PATTERN]</p>
-
-<p>Send signal to processes selected by regex PATTERN</p>
-
-<pre><code>-l      List all signals
--x      Match whole name (not substring)
--f      Match against entire command line
--s SID  Match session ID (0 for current)
--P PPID Match parent process ID
--v      Negate the match
--n      Signal the newest process only
--o      Signal the oldest process only
--e      Display name and PID of the process being killed</code></pre>
-
-</dd>
-<dt id="pmap"><b>pmap</b></dt>
-<dd>
-
-<p>pmap [-xq] PID...</p>
-
-<p>Display process memory usage</p>
-
-<pre><code>-x      Show details
--q      Quiet</code></pre>
-
-</dd>
-<dt id="popmaildir"><b>popmaildir</b></dt>
-<dd>
-
-<p>popmaildir [OPTIONS] MAILDIR [CONN_HELPER ARGS]</p>
-
-<p>Fetch content of remote mailbox to local maildir</p>
-
-<pre><code>-s              Skip authorization
--T              Get messages with TOP instead of RETR
--k              Keep retrieved messages on the server
--t SEC          Network timeout
--F &#39;PROG ARGS&#39;  Filter program (may be repeated)
--M &#39;PROG ARGS&#39;  Delivery program</code></pre>
-
-<p>Fetch from plain POP3 server: popmaildir -k DIR nc pop3.server.com 110 &lt;user_and_pass.txt Fetch from SSLed POP3 server and delete fetched emails: popmaildir DIR -- openssl s_client -quiet -connect pop3.server.com:995 &lt;user_and_pass.txt</p>
-
-</dd>
-<dt id="powertop"><b>powertop</b></dt>
-<dd>
-
-<p>powertop</p>
-
-<p>Analyze power consumption on Intel-based laptops</p>
-
-</dd>
 <dt id="printenv"><b>printenv</b></dt>
 <dd>
 
@@ -2025,83 +1028,12 @@ a       Archive</code></pre>
 <p>Format and print ARG(s) according to FORMAT (a-la C printf)</p>
 
 </dd>
-<dt id="ps"><b>ps</b></dt>
-<dd>
-
-<p>ps [-o COL1,COL2=HEADER] [-T]</p>
-
-<p>Show list of processes</p>
-
-<pre><code>-o COL1,COL2=HEADER     Select columns for display
--T                      Show threads</code></pre>
-
-</dd>
-<dt id="pscan"><b>pscan</b></dt>
-<dd>
-
-<p>pscan [-cb] [-p MIN_PORT] [-P MAX_PORT] [-t TIMEOUT] [-T MIN_RTT] HOST</p>
-
-<p>Scan HOST, print all open ports</p>
-
-<pre><code>-c      Show closed ports too
--b      Show blocked ports too
--p PORT Scan from this port (default 1)
--P PORT Scan up to this port (default 1024)
--t MS   Timeout (default 5000 ms)
--T MS   Minimum rtt (default 5 ms)</code></pre>
-
-</dd>
-<dt id="pstree"><b>pstree</b></dt>
-<dd>
-
-<p>pstree [-p] [PID|USER]</p>
-
-<p>Display process tree, optionally start from USER or PID</p>
-
-<pre><code>-p      Show pids</code></pre>
-
-</dd>
 <dt id="pwd"><b>pwd</b></dt>
 <dd>
 
 <p>pwd</p>
 
 <p>Print the full filename of the current working directory</p>
-
-</dd>
-<dt id="pwdx"><b>pwdx</b></dt>
-<dd>
-
-<p>pwdx PID...</p>
-
-<p>Show current directory for PIDs</p>
-
-</dd>
-<dt id="rdate"><b>rdate</b></dt>
-<dd>
-
-<p>rdate [-s/-p] HOST</p>
-
-<p>Set and print time from HOST using RFC 868</p>
-
-<pre><code>-s      Only set system time
--p      Only print time</code></pre>
-
-</dd>
-<dt id="rdev"><b>rdev</b></dt>
-<dd>
-
-<p>rdev</p>
-
-<p>Print the device node associated with the filesystem mounted at &#39;/&#39;</p>
-
-</dd>
-<dt id="readahead"><b>readahead</b></dt>
-<dd>
-
-<p>readahead [FILE]...</p>
-
-<p>Preload FILEs to RAM</p>
 
 </dd>
 <dt id="readlink"><b>readlink</b></dt>
@@ -2116,65 +1048,12 @@ a       Archive</code></pre>
 -v      Verbose</code></pre>
 
 </dd>
-<dt id="readprofile"><b>readprofile</b></dt>
-<dd>
-
-<p>readprofile [OPTIONS]</p>
-
-<pre><code>-m MAPFILE      (Default: /boot/System.map)
--p PROFILE      (Default: /proc/profile)
--M NUM          Set the profiling multiplier to NUM
--i              Print only info about the sampling step
--v              Verbose
--a              Print all symbols, even if count is 0
--b              Print individual histogram-bin counts
--s              Print individual counters within functions
--r              Reset all the counters (root only)
--n              Disable byte order auto-detection</code></pre>
-
-</dd>
 <dt id="realpath"><b>realpath</b></dt>
 <dd>
 
 <p>realpath FILE...</p>
 
 <p>Print absolute pathnames of FILEs</p>
-
-</dd>
-<dt id="reformime"><b>reformime</b></dt>
-<dd>
-
-<p>reformime [OPTIONS]</p>
-
-<p>Parse MIME-encoded message on stdin</p>
-
-<pre><code>-x PREFIX       Extract content of MIME sections to files
--X PROG ARGS    Filter content of MIME sections through PROG
-                Must be the last option</code></pre>
-
-<p>Other options are silently ignored</p>
-
-</dd>
-<dt id="remove-shell"><b>remove-shell</b></dt>
-<dd>
-
-<p>remove-shell SHELL...</p>
-
-<p>Remove SHELLs from /etc/shells</p>
-
-</dd>
-<dt id="renice"><b>renice</b></dt>
-<dd>
-
-<p>renice [-n] PRIORITY [[-p|g|u] ID...]...</p>
-
-<p>Change scheduling priority of a running process</p>
-
-<pre><code>-n      Add PRIORITY to current nice value
-        Without -n, nice value is set to PRIORITY
--p      Process ids (default)
--g      Process group ids
--u      Process user names</code></pre>
 
 </dd>
 <dt id="resume"><b>resume</b></dt>
@@ -2241,22 +1120,6 @@ a       Archive</code></pre>
 <p>Output a cpio archive of the rpm file</p>
 
 </dd>
-<dt id="rtcwake"><b>rtcwake</b></dt>
-<dd>
-
-<p>rtcwake [-a | -l | -u] [-d DEV] [-m MODE] [-s SEC | -t TIME]</p>
-
-<p>Enter a system sleep state until specified wakeup time</p>
-
-<pre><code>-a      Read clock mode from /etc/adjtime (default)
--l      Clock is set to local time
--u      Clock is set to UTC time
--d DEV  Specify the RTC device
--m MODE Set sleep state (default: standby)
--s SEC  Set timeout in SEC seconds from now
--t TIME Set timeout to TIME seconds from epoch</code></pre>
-
-</dd>
 <dt id="run-parts"><b>run-parts</b></dt>
 <dd>
 
@@ -2270,43 +1133,6 @@ a       Archive</code></pre>
 --test          Dry run
 --exit-on-error Exit if a script exits with non-zero
 --list          Print names of matching files even if they are not executable</code></pre>
-
-</dd>
-<dt id="runlevel"><b>runlevel</b></dt>
-<dd>
-
-<p>runlevel [FILE]</p>
-
-<p>Find the current and previous system runlevel</p>
-
-<p>If no utmp FILE exists or if no runlevel record can be found, print &quot;unknown&quot;</p>
-
-</dd>
-<dt id="runsvdir"><b>runsvdir</b></dt>
-<dd>
-
-<p>runsvdir [-P] [-s SCRIPT] DIR</p>
-
-<p>Start a runsv process for each subdirectory. If it exits, restart it.</p>
-
-<pre><code>-P              Put each runsv in a new session
--s SCRIPT       Run SCRIPT &lt;signo&gt; after signal is processed</code></pre>
-
-</dd>
-<dt id="rx"><b>rx</b></dt>
-<dd>
-
-<p>rx FILE</p>
-
-<p>Receive a file using the xmodem protocol</p>
-
-</dd>
-<dt id="scriptreplay"><b>scriptreplay</b></dt>
-<dd>
-
-<p>scriptreplay TIMINGFILE [TYPESCRIPT [DIVISOR]]</p>
-
-<p>Play back typescripts, using timing information</p>
 
 </dd>
 <dt id="sed"><b>sed</b></dt>
@@ -2333,32 +1159,6 @@ a       Archive</code></pre>
 
 <pre><code>-w      Pad with leading zeros
 -s SEP  String separator</code></pre>
-
-</dd>
-<dt id="setsid"><b>setsid</b></dt>
-<dd>
-
-<p>setsid [-c] PROG ARGS</p>
-
-<p>Run PROG in a new session. PROG will have no controlling terminal and will not be affected by keyboard signals (^C etc).</p>
-
-<pre><code>-c      Set controlling terminal to stdin</code></pre>
-
-</dd>
-<dt id="setuidgid"><b>setuidgid</b></dt>
-<dd>
-
-<p>setuidgid USER PROG ARGS</p>
-
-<p>Set uid and gid to USER&#39;s uid and gid, drop supplementary group ids, run PROG</p>
-
-</dd>
-<dt id="sh"><b>sh</b></dt>
-<dd>
-
-<p>sh [-enxl] [-c &#39;SCRIPT&#39; [ARG0 ARGS] | FILE ARGS | -s ARGS]</p>
-
-<p>Unix shell interpreter</p>
 
 </dd>
 <dt id="sha1sum"><b>sha1sum</b></dt>
@@ -2446,39 +1246,6 @@ a       Archive</code></pre>
 <p>Pause for a time equal to the total of the args given, where each arg can have an optional suffix of (s)econds, (m)inutes, (h)ours, or (d)ays</p>
 
 </dd>
-<dt id="smemcap"><b>smemcap</b></dt>
-<dd>
-
-<p>smemcap &gt;SMEMDATA.TAR</p>
-
-<p>Collect memory usage data in /proc and write it to stdout</p>
-
-</dd>
-<dt id="softlimit"><b>softlimit</b></dt>
-<dd>
-
-<p>softlimit [-a BYTES] [-m BYTES] [-d BYTES] [-s BYTES] [-l BYTES] [-f BYTES] [-c BYTES] [-r BYTES] [-o N] [-p N] [-t N] PROG ARGS</p>
-
-<p>Set soft resource limits, then run PROG</p>
-
-<pre><code>        -a BYTES        Limit total size of all segments
-        -m BYTES        Same as -d BYTES -s BYTES -l BYTES -a BYTES
-        -d BYTES        Limit data segment
-        -s BYTES        Limit stack segment
-        -l BYTES        Limit locked memory size
-        -o N            Limit number of open files per process
-        -p N            Limit number of processes per uid
-Options controlling file sizes:
-
-        -f BYTES        Limit output file sizes
-        -c BYTES        Limit core file size
-Efficiency opts:
-
-        -r BYTES        Limit resident set size
-        -t N            Limit CPU time, process receives
-                        a SIGXCPU after N seconds</code></pre>
-
-</dd>
 <dt id="sort"><b>sort</b></dt>
 <dd>
 
@@ -2513,12 +1280,6 @@ Efficiency opts:
 <pre><code>-b N[k|m]       Split by N (kilo|mega)bytes
 -l N            Split by N lines
 -a N            Use N letters as suffix</code></pre>
-
-</dd>
-<dt id="ssl_client"><b>ssl_client</b></dt>
-<dd>
-
-<p>ssl_client [-e] -s FD [-r FD] [-n SNI]</p>
 
 </dd>
 <dt id="stat"><b>stat</b></dt>
@@ -2591,30 +1352,6 @@ Efficiency opts:
 -n LEN          At least LEN characters form a string (default 4)</code></pre>
 
 </dd>
-<dt id="su"><b>su</b></dt>
-<dd>
-
-<p>su [-lmp] [-s SH] [-] [USER [FILE ARGS | -c &#39;CMD&#39; [ARG0 ARGS]]]</p>
-
-<p>Run shell under USER (by default, root)</p>
-
-<pre><code>-,-l    Clear environment, go to home dir, run shell as login shell
--p,-m   Do not set new $HOME, $SHELL, $USER, $LOGNAME
--c CMD  Command to pass to &#39;sh -c&#39;
--s SH   Shell to use instead of user&#39;s default</code></pre>
-
-</dd>
-<dt id="sulogin"><b>sulogin</b></dt>
-<dd>
-
-<p>sulogin [-t N] [TTY]</p>
-
-<p>Single user login</p>
-
-<pre><code>-p      Start a login shell
--t SEC  Timeout</code></pre>
-
-</dd>
 <dt id="sum"><b>sum</b></dt>
 <dd>
 
@@ -2626,88 +1363,12 @@ Efficiency opts:
 -s      Use System V sum algorithm (512byte blocks)</code></pre>
 
 </dd>
-<dt id="sv"><b>sv</b></dt>
-<dd>
-
-<p>sv [-v] [-w SEC] CMD SERVICE_DIR...</p>
-
-<p>Control services monitored by runsv supervisor. Commands (only first character is enough):</p>
-
-<p>status: query service status up: if service isn&#39;t running, start it. If service stops, restart it once: like &#39;up&#39;, but if service stops, don&#39;t restart it down: send TERM and CONT signals. If ./run exits, start ./finish if it exists. After it stops, don&#39;t restart service exit: send TERM and CONT signals to service and log service. If they exit, runsv exits too pause, cont, hup, alarm, interrupt, quit, 1, 2, term, kill: send STOP, CONT, HUP, ALRM, INT, QUIT, USR1, USR2, TERM, KILL signal to service</p>
-
-</dd>
-<dt id="svc"><b>svc</b></dt>
-<dd>
-
-<p>svc [-udopchaitkx] SERVICE_DIR...</p>
-
-<p>Control services monitored by runsv supervisor</p>
-
-<pre><code>-u      If service is not running, start it; restart if it stops
--d      If service is running, send TERM+CONT signals; do not restart it
--o      Once: if service is not running, start it; do not restart it
--pchaitk Send STOP, CONT, HUP, ALRM, INT, TERM, KILL signal to service
--x      Exit: runsv will exit as soon as the service is down</code></pre>
-
-</dd>
-<dt id="svlogd"><b>svlogd</b></dt>
-<dd>
-
-<p>svlogd [-tttv] [-r C] [-R CHARS] [-l MATCHLEN] [-b BUFLEN] DIR...</p>
-
-<p>Read log data from stdin and write to rotated log files in DIRs</p>
-
-<pre><code>-r C    Replace non-printable characters with C
--R CHARS Also replace CHARS with C (default _)
--t      Timestamp with @tai64n
--tt     Timestamp with yyyy-mm-dd_hh:mm:ss.sssss
--ttt    Timestamp with yyyy-mm-ddThh:mm:ss.sssss
--v      Verbose</code></pre>
-
-<p>DIR/config file modifies behavior: sSIZE - when to rotate logs (default 1000000, 0 disables) nNUM - number of files to retain !PROG - process rotated log with PROG +,-PATTERN - (de)select line for logging E,ePATTERN - (de)select line for stderr</p>
-
-</dd>
-<dt id="svok"><b>svok</b></dt>
-<dd>
-
-<p>svok SERVICE_DIR</p>
-
-<p>Check whether runsv supervisor is running. Exit code is 0 if it does, 100 if it does not, 111 (with error message) if SERVICE_DIR does not exist.</p>
-
-</dd>
-<dt id="switch_root"><b>switch_root</b></dt>
-<dd>
-
-<p>switch_root [-c CONSOLE_DEV] NEW_ROOT NEW_INIT [ARGS]</p>
-
-<p>Free initramfs and switch to another root fs:</p>
-
-<p>chroot to NEW_ROOT, delete all in /, move NEW_ROOT to /, execute NEW_INIT. PID must be 1. NEW_ROOT must be a mountpoint.</p>
-
-<pre><code>-c DEV  Reopen stdio to DEV after switch</code></pre>
-
-</dd>
 <dt id="sync"><b>sync</b></dt>
 <dd>
 
-<p>sync [-df] [FILE]...</p>
+<p>sync</p>
 
-<p>Write all buffered blocks (in FILEs) to disk -d Avoid syncing metadata -f Sync filesystems underlying FILEs</p>
-
-</dd>
-<dt id="sysctl"><b>sysctl</b></dt>
-<dd>
-
-<p>sysctl [-enq] { -a | -p [FILE]... | [-w] [KEY[=VALUE]]... }</p>
-
-<p>Show/set kernel parameters</p>
-
-<pre><code>-e      Don&#39;t warn about unknown keys
--n      Don&#39;t show key names
--q      Quiet
--a      Show all values
--p      Set values from FILEs (default /etc/sysctl.conf)
--w      Set values</code></pre>
+<p>Write all buffered blocks to disk</p>
 
 </dd>
 <dt id="tac"><b>tac</b></dt>
@@ -2770,41 +1431,6 @@ t       List
 --to-command COMMAND    Pipe files to COMMAND</code></pre>
 
 </dd>
-<dt id="taskset"><b>taskset</b></dt>
-<dd>
-
-<p>taskset [-ap] [HEXMASK | -c LIST] { PID | PROG ARGS }</p>
-
-<p>Set or get CPU affinity</p>
-
-<pre><code>-p      Operate on PID
--a      Operate on all threads
--c      Affinity is a list, not mask</code></pre>
-
-</dd>
-<dt id="tcpsvd"><b>tcpsvd</b></dt>
-<dd>
-
-<p>tcpsvd [-hEv] [-c N] [-C N[:MSG]] [-b N] [-u USER] [-l NAME] IP PORT PROG</p>
-
-<p>Create TCP socket, bind to IP:PORT and listen for incoming connections. Run PROG for each connection.</p>
-
-<pre><code>IP PORT         IP:PORT to listen on
-PROG ARGS       Program to run
--u USER[:GRP]   Change to user/group after bind
--c N            Up to N connections simultaneously (default 30)
--b N            Allow backlog of approximately N TCP SYNs (default 20)
--C N[:MSG]      Allow only up to N connections from the same IP:
-                new connections from this IP address are closed
-                immediately, MSG is written to the peer before close
--E              Don&#39;t set up environment
--h              Look up peer&#39;s hostname
--l NAME         Local hostname (else look up local hostname in DNS)
--v              Verbose</code></pre>
-
-<p>Environment if no -E: PROTO=&#39;TCP&#39; TCPREMOTEADDR=&#39;ip:port&#39; TCPLOCALADDR=&#39;ip:port&#39; TCPORIGDSTADDR=&#39;ip:port&#39; of destination before firewall Useful for REDIRECTed-to-local connections: iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to 8080 TCPCONCURRENCY=num_of_connects_from_this_ip If -h: TCPLOCALHOST=&#39;hostname&#39; (-l NAME is used if specified) TCPREMOTEHOST=&#39;hostname&#39;</p>
-
-</dd>
 <dt id="tee"><b>tee</b></dt>
 <dd>
 
@@ -2816,109 +1442,12 @@ PROG ARGS       Program to run
 -i      Ignore interrupt signals (SIGINT)</code></pre>
 
 </dd>
-<dt id="telnet"><b>telnet</b></dt>
-<dd>
-
-<p>telnet [-a] [-l USER] HOST [PORT]</p>
-
-<p>Connect to telnet server</p>
-
-<pre><code>-a      Automatic login with $USER variable
--l USER Automatic login as USER</code></pre>
-
-</dd>
-<dt id="telnetd"><b>telnetd</b></dt>
-<dd>
-
-<p>telnetd [OPTIONS]</p>
-
-<p>Handle incoming telnet connections</p>
-
-<pre><code>-l LOGIN        Exec LOGIN on connect
--f ISSUE_FILE   Display ISSUE_FILE instead of /etc/issue
--K              Close connection as soon as login exits
-                (normally wait until all programs close slave pty)
--p PORT         Port to listen on. Default 23
--b ADDR[:PORT]  Address to bind to
--F              Run in foreground
--i              Inetd mode
--w SEC          Inetd &#39;wait&#39; mode, linger time SEC
-        inetd.conf line: 23 stream tcp wait root telnetd telnetd -w10
--S              Log to syslog (implied by -i or without -F and -w)</code></pre>
-
-</dd>
-<dt id="tftp"><b>tftp</b></dt>
-<dd>
-
-<p>tftp [OPTIONS] HOST [PORT]</p>
-
-<p>Transfer a file from/to tftp server</p>
-
-<pre><code>-l FILE Local FILE
--r FILE Remote FILE
--g      Get file
--p      Put file
--b SIZE Transfer blocks in bytes</code></pre>
-
-</dd>
-<dt id="tftpd"><b>tftpd</b></dt>
-<dd>
-
-<p>tftpd [-crl] [-u USER] [DIR]</p>
-
-<p>Transfer a file on tftp client&#39;s request</p>
-
-<p>tftpd is an inetd service, inetd.conf line: 69 dgram udp nowait root tftpd tftpd -l /files/to/serve Can be run from udpsvd:</p>
-
-<pre><code>udpsvd -vE 0.0.0.0 69 tftpd /files/to/serve
-
--r      Prohibit upload
--c      Allow file creation via upload
--u USER Access files as USER
--l      Log to syslog (inetd mode requires this)</code></pre>
-
-</dd>
-<dt id="time"><b>time</b></dt>
-<dd>
-
-<p>time [-vpa] [-o FILE] PROG ARGS</p>
-
-<p>Run PROG, display resource usage when it exits</p>
-
-<pre><code>-v      Verbose
--p      POSIX output format
--f FMT  Custom format
--o FILE Write result to FILE
--a      Append (else overwrite)</code></pre>
-
-</dd>
 <dt id="timeout"><b>timeout</b></dt>
 <dd>
 
 <p>timeout [-s SIG] [-k KILL_SECS] SECS PROG ARGS</p>
 
 <p>Run PROG. Send SIG to it if it is not gone in SECS seconds. Default SIG: TERM.If it still exists in KILL_SECS seconds, send KILL.</p>
-
-</dd>
-<dt id="top"><b>top</b></dt>
-<dd>
-
-<p>top [-bmH] [-n COUNT] [-d SECONDS]</p>
-
-<p>Show a view of process activity in real time. Read the status of all processes from /proc each SECONDS and show a screenful of them. Keys:</p>
-
-<pre><code>        N/M/P/T: show CPU usage, sort by pid/mem/cpu/time
-        S: show memory
-        R: reverse sort
-        H: toggle threads, 1: toggle SMP
-        Q,^C: exit
-Options:
-
-        -b      Batch mode
-        -n N    Exit after N iterations
-        -d SEC  Delay between updates
-        -m      Same as &#39;s&#39; key
-        -H      Show threads</code></pre>
 
 </dd>
 <dt id="touch"><b>touch</b></dt>
@@ -2960,17 +1489,6 @@ Options:
 -s SIZE</code></pre>
 
 </dd>
-<dt id="ts"><b>ts</b></dt>
-<dd>
-
-<p>ts [-is] [STRFTIME]</p>
-
-<p>Pipe stdin to stdout, add timestamp to each line</p>
-
-<pre><code>-s      Time since start
--i      Time since previous line</code></pre>
-
-</dd>
 <dt id="tsort"><b>tsort</b></dt>
 <dd>
 
@@ -2987,94 +1505,6 @@ Options:
 <p>Print file name of stdin&#39;s terminal</p>
 
 <pre><code>-s      Print nothing, only return exit status</code></pre>
-
-</dd>
-<dt id="ttysize"><b>ttysize</b></dt>
-<dd>
-
-<p>ttysize [w] [h]</p>
-
-<p>Print dimensions of stdin tty, or 80x24</p>
-
-</dd>
-<dt id="udhcpc"><b>udhcpc</b></dt>
-<dd>
-
-<p>udhcpc [-fbqvRB] [-a[MSEC]] [-t N] [-T SEC] [-A SEC|-n] [-i IFACE] [-s PROG] [-p PIDFILE] [-oC] [-r IP] [-V VENDOR] [-F NAME] [-x OPT:VAL]... [-O OPT]...</p>
-
-<pre><code>        -i IFACE        Interface to use (default eth0)
-        -s PROG         Run PROG at DHCP events (default /usr/share/udhcpc/default.script)
-        -p FILE         Create pidfile
-        -B              Request broadcast replies
-        -t N            Send up to N discover packets (default 3)
-        -T SEC          Pause between packets (default 3)
-        -A SEC          Wait if lease is not obtained (default 20)
-        -n              Exit if lease is not obtained
-        -q              Exit after obtaining lease
-        -R              Release IP on exit
-        -f              Run in foreground
-        -S              Log to syslog too
-        -a[MSEC]        Validate offered address with ARP ping
-        -r IP           Request this IP address
-        -o              Don&#39;t request any options (unless -O is given)
-        -O OPT          Request option OPT from server (cumulative)
-        -x OPT:VAL      Include option OPT in sent packets (cumulative)
-                        Examples of string, numeric, and hex byte opts:
-                        -x hostname:bbox - option 12
-                        -x lease:3600 - option 51 (lease time)
-                        -x 0x3d:0100BEEFC0FFEE - option 61 (client id)
-                        -x 14:&#39;&quot;dumpfile&quot;&#39; - option 14 (shell-quoted)
-        -F NAME         Ask server to update DNS mapping for NAME
-        -V VENDOR       Vendor identifier (default &#39;udhcp VERSION&#39;)
-        -C              Don&#39;t send MAC as client identifier
-        -v              Verbose
-Signals:
-
-        USR1    Renew lease
-        USR2    Release lease</code></pre>
-
-</dd>
-<dt id="udhcpd"><b>udhcpd</b></dt>
-<dd>
-
-<p>udhcpd [-fS] [-I ADDR] [-a MSEC] [CONFFILE]</p>
-
-<p>DHCP server</p>
-
-<pre><code>        -f      Run in foreground
-        -S      Log to syslog too
-        -I ADDR Local address
-        -a MSEC Timeout for ARP ping (default 2000)
-Signals:
-
-        USR1    Update lease file</code></pre>
-
-</dd>
-<dt id="udpsvd"><b>udpsvd</b></dt>
-<dd>
-
-<p>udpsvd [-hEv] [-c N] [-u USER] [-l NAME] IP PORT PROG</p>
-
-<p>Create UDP socket, bind to IP:PORT and wait for incoming packets. Run PROG for each packet, redirecting all further packets with same peer ip:port to it.</p>
-
-<pre><code>IP PORT         IP:PORT to listen on
-PROG ARGS       Program to run
--u USER[:GRP]   Change to user/group after bind
--c N            Up to N connections simultaneously (default 30)
--E              Don&#39;t set up environment
--h              Look up peer&#39;s hostname
--l NAME         Local hostname (else look up local hostname in DNS)
--v              Verbose</code></pre>
-
-<p>Environment if no -E: PROTO=&#39;UDP&#39; UDPREMOTEADDR=&#39;ip:port&#39; UDPLOCALADDR=&#39;ip:port&#39; If -h: UDPLOCALHOST=&#39;hostname&#39; (-l NAME is used if specified) UDPREMOTEHOST=&#39;hostname&#39;</p>
-
-</dd>
-<dt id="uevent"><b>uevent</b></dt>
-<dd>
-
-<p>uevent [PROG ARGS]</p>
-
-<p>uevent runs PROG for every netlink notification. PROG&#39;s environment contains data passed from the kernel. Typical usage (daemon for dynamic device node creation): # uevent mdev &amp; mdev -s</p>
 
 </dd>
 <dt id="uname"><b>uname</b></dt>
@@ -3188,22 +1618,6 @@ PROG ARGS       Program to run
 -d DIR  Extract into DIR</code></pre>
 
 </dd>
-<dt id="uptime"><b>uptime</b></dt>
-<dd>
-
-<p>uptime</p>
-
-<p>Display the time since the last boot</p>
-
-</dd>
-<dt id="users"><b>users</b></dt>
-<dd>
-
-<p>users</p>
-
-<p>Print the users currently logged on</p>
-
-</dd>
 <dt id="usleep"><b>usleep</b></dt>
 <dd>
 
@@ -3242,41 +1656,6 @@ PROG ARGS       Program to run
 -H      List available features</code></pre>
 
 </dd>
-<dt id="volname"><b>volname</b></dt>
-<dd>
-
-<p>volname [DEVICE]</p>
-
-<p>Show CD volume name of the DEVICE (default /dev/cdrom)</p>
-
-</dd>
-<dt id="w"><b>w</b></dt>
-<dd>
-
-<p>w</p>
-
-<p>Show who is logged on</p>
-
-</dd>
-<dt id="wall"><b>wall</b></dt>
-<dd>
-
-<p>wall [FILE]</p>
-
-<p>Write content of FILE or stdin to all logged-in users</p>
-
-</dd>
-<dt id="watch"><b>watch</b></dt>
-<dd>
-
-<p>watch [-n SEC] [-t] PROG ARGS</p>
-
-<p>Run PROG periodically</p>
-
-<pre><code>-n SEC  Period (default 2)
--t      Don&#39;t print header</code></pre>
-
-</dd>
 <dt id="wc"><b>wc</b></dt>
 <dd>
 
@@ -3299,25 +1678,6 @@ PROG ARGS       Program to run
 <p>Locate COMMAND</p>
 
 <pre><code>-a      Show all matches</code></pre>
-
-</dd>
-<dt id="who"><b>who</b></dt>
-<dd>
-
-<p>who [-aH]</p>
-
-<p>Show who is logged on</p>
-
-<pre><code>-a      Show all
--H      Print column headers</code></pre>
-
-</dd>
-<dt id="whoami"><b>whoami</b></dt>
-<dd>
-
-<p>whoami</p>
-
-<p>Print the user name associated with the current effective user id</p>
 
 </dd>
 <dt id="xxd"><b>xxd</b></dt>

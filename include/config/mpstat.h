@@ -1,1 +1,1 @@
-#define CONFIG_MPSTAT 1
+#undef CONFIG_MPSTAT

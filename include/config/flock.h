@@ -1,1 +1,1 @@
-#define CONFIG_FLOCK 1
+#undef CONFIG_FLOCK

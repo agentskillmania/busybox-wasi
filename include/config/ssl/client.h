@@ -1,1 +1,1 @@
-#define CONFIG_SSL_CLIENT 1
+#undef CONFIG_SSL_CLIENT

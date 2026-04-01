@@ -1,1 +1,1 @@
-#define CONFIG_MICROCOM 1
+#undef CONFIG_MICROCOM

@@ -1,1 +1,1 @@
-#define CONFIG_KILL 1
+#undef CONFIG_KILL

@@ -1,1 +1,1 @@
-#define CONFIG_MKFS_VFAT 1
+#undef CONFIG_MKFS_VFAT

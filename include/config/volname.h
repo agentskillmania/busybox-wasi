@@ -1,1 +1,1 @@
-#define CONFIG_VOLNAME 1
+#undef CONFIG_VOLNAME

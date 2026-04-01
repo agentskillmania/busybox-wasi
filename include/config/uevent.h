@@ -1,1 +1,1 @@
-#define CONFIG_UEVENT 1
+#undef CONFIG_UEVENT

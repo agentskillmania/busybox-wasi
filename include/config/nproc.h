@@ -1,1 +1,1 @@
-#define CONFIG_NPROC 1
+#undef CONFIG_NPROC

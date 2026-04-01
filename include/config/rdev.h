@@ -1,1 +1,1 @@
-#define CONFIG_RDEV 1
+#undef CONFIG_RDEV

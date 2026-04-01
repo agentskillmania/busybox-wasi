@@ -1,1 +1,1 @@
-#define CONFIG_MKDOSFS 1
+#undef CONFIG_MKDOSFS

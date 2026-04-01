@@ -1,1 +1,1 @@
-#define CONFIG_IOSTAT 1
+#undef CONFIG_IOSTAT

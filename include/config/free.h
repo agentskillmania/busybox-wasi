@@ -1,1 +1,1 @@
-#define CONFIG_FREE 1
+#undef CONFIG_FREE

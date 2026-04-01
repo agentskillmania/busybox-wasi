@@ -1,1 +1,1 @@
-#define CONFIG_HEXEDIT 1
+#undef CONFIG_HEXEDIT

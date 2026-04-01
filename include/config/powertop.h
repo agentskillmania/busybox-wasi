@@ -1,1 +1,1 @@
-#define CONFIG_POWERTOP 1
+#undef CONFIG_POWERTOP

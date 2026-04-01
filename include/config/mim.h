@@ -1,1 +1,1 @@
-#define CONFIG_MIM 1
+#undef CONFIG_MIM

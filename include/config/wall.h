@@ -1,1 +1,1 @@
-#define CONFIG_WALL 1
+#undef CONFIG_WALL

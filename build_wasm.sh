@@ -7,7 +7,8 @@ set -e
 WASI_SDK="${WASI_SDK:-$HOME/wasi-sdk}"
 WASMTIME="${WASMTIME:-$HOME/bin/wasmtime}"
 PROJ_DIR="$(cd "$(dirname "$0")" && pwd)"
-CC="$WASI_SDK/bin/clang --target=wasm32-wasip1 --sysroot=$WASI_SDK/share/wasi-sysroot -I$PROJ_DIR/wasi_include"
+SYSROOT="$WASI_SDK/share/wasi-sysroot"
+CC="$WASI_SDK/bin/clang --target=wasm32-wasip1 --sysroot=$SYSROOT -I$PROJ_DIR/wasi_include"
 AR="$WASI_SDK/bin/llvm-ar"
 OUTPUT="$PROJ_DIR/busybox.wasm"
 
@@ -31,7 +32,7 @@ done
 # 第三步：编译 stub
 echo "[3/4] 编译 wasi_stubs.c..."
 $CC -D_WASI_EMULATED_SIGNAL -D_WASI_EMULATED_MMAN -D_WASI_EMULATED_PROCESS_CLOCKS \
-  -fwasm-exceptions -c "$PROJ_DIR/wasi_stubs.c" -o wasi_stubs.o
+  -c "$PROJ_DIR/wasi_stubs.c" -o wasi_stubs.o
 
 # 第四步：链接
 echo "[4/4] 链接 busybox.wasm..."
@@ -39,7 +40,7 @@ $CC -static -o "$OUTPUT" \
   -Wl,--gc-sections \
   -Wl,--whole-archive "${LIBS[@]}" -Wl,--no-whole-archive \
   wasi_stubs.o \
-  -lsetjmp -lwasi-emulated-signal -lwasi-emulated-mman \
+  -lwasi-emulated-signal -lwasi-emulated-mman \
   -lwasi-emulated-process-clocks -lwasi-emulated-getpid \
   -Wl,--error-limit=0 -Wl,--allow-undefined
 

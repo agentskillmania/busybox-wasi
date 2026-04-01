@@ -1,1 +1,1 @@
-#define CONFIG_SVC 1
+#undef CONFIG_SVC

@@ -1,1 +1,1 @@
-#define CONFIG_UDHCPD 1
+#undef CONFIG_UDHCPD

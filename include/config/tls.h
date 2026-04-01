@@ -1,1 +1,1 @@
-#define CONFIG_TLS 1
+#undef CONFIG_TLS

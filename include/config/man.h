@@ -1,1 +1,1 @@
-#define CONFIG_MAN 1
+#undef CONFIG_MAN
