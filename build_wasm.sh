@@ -23,11 +23,11 @@ echo "=== 编译 busybox 1.37.0 → WASM (preview2) ==="
 # 第一步：编译所有源文件
 # 链接阶段在 make 中会因 undefined symbol 失败，这是预期的，
 # 我们用 --allow-undefined 在第四步单独链接
-echo "[1/4] 编译源文件..."
+echo "[1/5] 编译源文件..."
 make -j$(sysctl -n hw.ncpu) AR="$AR" CC="$CC" LD="$LD" SKIP_STRIP=y 2>&1 || true
 
 # 第二步：收集所有 WASM 目标文件
-echo "[2/4] 收集目标文件..."
+echo "[2/5] 收集目标文件..."
 LIBS=()
 for f in $(find . -name "lib.a" -type f | sort); do
     ftype=$(file "$f" 2>/dev/null)
@@ -36,8 +36,13 @@ for f in $(find . -name "lib.a" -type f | sort); do
     fi
 done
 
-# 第三步：编译 stub
-echo "[3/4] 编译 wasi_stubs.c..."
+# 第三步：编译 wsh（WASM Shell，不走 BusyBox 构建系统）
+echo "[3/5] 编译 wsh..."
+$CC \
+  -c "$PROJ_DIR/shell/wsh.c" -o wsh_main.o
+
+# 第四步：编译 stub
+echo "[4/5] 编译 wasi_stubs.c..."
 $CC \
   -D_WASI_EMULATED_SIGNAL \
   -D_WASI_EMULATED_MMAN \
@@ -45,18 +50,18 @@ $CC \
   -mllvm -wasm-enable-sjlj -mllvm -wasm-use-legacy-eh=0 \
   -c "$PROJ_DIR/wasi_stubs.c" -o wasi_stubs.o
 
-# 第四步：链接
-echo "[4/4] 链接 busybox.wasm..."
+# 第五步：链接
+echo "[5/5] 链接 busybox.wasm..."
 $CC -static -o "$OUTPUT" \
   -Wl,--gc-sections \
   -Wl,--whole-archive "${LIBS[@]}" -Wl,--no-whole-archive \
-  wasi_stubs.o \
+  wsh_main.o wasi_stubs.o \
   -lwasi-emulated-signal -lwasi-emulated-mman \
   -lwasi-emulated-process-clocks -lwasi-emulated-getpid \
   -lsetjmp \
   -Wl,--error-limit=0 -Wl,--allow-undefined
 
-rm -f wasi_stubs.o
+rm -f wasi_stubs.o wsh_main.o
 
 echo ""
 echo "=== 构建完成 ==="
@@ -68,3 +73,6 @@ echo "=== 验证 ==="
 $WASMTIME -W exceptions=y "$OUTPUT" echo "Hello from WASM busybox!"
 echo ""
 $WASMTIME -W exceptions=y "$OUTPUT" --list 2>&1 | wc -l | xargs -I{} echo "{} 个 applets"
+echo ""
+echo "--- wsh 验证 ---"
+$WASMTIME -W exceptions=y "$OUTPUT" wsh -c "test" 2>&1
