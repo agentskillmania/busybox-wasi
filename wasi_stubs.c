@@ -1,14 +1,14 @@
 /*
- * WASI POSIX stub 实现。
+ * WASI POSIX stub 实现（preview2 版本）。
  *
- * 提供_busybox_wasm 链接时需要的 POSIX 函数 stub。
- * 这些函数在 WASI 中不存在或只有部分实现。
- * 所有 stub 返回安全默认值，让 busybox 能链接和基本运行。
+ * 提供 busybox 链接时需要的 POSIX 函数 stub。
+ * 信号相关 stub 由 -lwasi-emulated-signal 提供，不再需要手工实现。
+ * 网络相关函数（socket/connect/bind 等）由 preview2 libc 原生提供。
+ * 此文件仅包含 WASI 确实不支持的函数（fork/exec/pipe 等）。
  */
 #include <signal.h>
 #include <unistd.h>
 #include <sys/types.h>
-#include <sys/socket.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
@@ -37,80 +37,9 @@ void siglongjmp(void *env, int val) {
     longjmp(env, val);
 }
 
-/* ========== 网络相关 stub ========== */
-
-int socket(int domain, int type, int protocol) {
-    (void)domain; (void)type; (void)protocol;
-    errno = ENOSYS;
-    return -1;
-}
-
-int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
-    (void)sockfd; (void)addr; (void)addrlen;
-    errno = ENOSYS;
-    return -1;
-}
-
-int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen) {
-    (void)sockfd; (void)addr; (void)addrlen;
-    errno = ENOSYS;
-    return -1;
-}
-
-int listen(int sockfd, int backlog) {
-    (void)sockfd; (void)backlog;
-    errno = ENOSYS;
-    return -1;
-}
-
-ssize_t sendto(int sockfd, const void *buf, size_t len, int flags,
-               const struct sockaddr *dest_addr, socklen_t addrlen) {
-    (void)sockfd; (void)buf; (void)len; (void)flags;
-    (void)dest_addr; (void)addrlen;
-    errno = ENOSYS;
-    return -1;
-}
-
-ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags,
-                 struct sockaddr *src_addr, socklen_t *addrlen) {
-    (void)sockfd; (void)buf; (void)len; (void)flags;
-    (void)src_addr; (void)addrlen;
-    errno = ENOSYS;
-    return -1;
-}
-
-ssize_t sendmsg(int sockfd, const struct msghdr *msg, int flags) {
-    (void)sockfd; (void)msg; (void)flags;
-    errno = ENOSYS;
-    return -1;
-}
-
-ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags) {
-    (void)sockfd; (void)msg; (void)flags;
-    errno = ENOSYS;
-    return -1;
-}
-
-int setsockopt(int sockfd, int level, int optname,
-               const void *optval, socklen_t optlen) {
-    (void)sockfd; (void)level; (void)optname; (void)optval; (void)optlen;
-    errno = ENOSYS;
-    return -1;
-}
-
-int getsockname(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
-    (void)sockfd; (void)addr; (void)addrlen;
-    errno = ENOSYS;
-    return -1;
-}
-
-int getpeername(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
-    (void)sockfd; (void)addr; (void)addrlen;
-    errno = ENOSYS;
-    return -1;
-}
-
 /* ========== 信号管理 stub ========== */
+/* preview2 的 -lwasi-emulated-signal 和组件模型链接器有兼容性问题，
+ * 继续使用手工 stub 保证链接通过 */
 
 int sigaction(int sig, const struct sigaction *act, struct sigaction *oact) {
     (void)sig; (void)act; (void)oact;
@@ -275,12 +204,9 @@ int clock_settime(clockid_t clk_id, const struct timespec *tp) {
 }
 
 /* ========== 网络/接口 stub ========== */
+/* 注意：hstrerror 已由 preview2 libc 提供，不再需要 stub */
 
-const char *hstrerror(int err) { (void)err; return "unknown error"; }
 unsigned int if_nametoindex(const char *ifname) { (void)ifname; return 0; }
-struct hostent *ether_aton_r(const char *asc, void *buf) {
-    (void)asc; (void)buf; return NULL;
-}
 
 /* ========== 终端/TTY stub ========== */
 
@@ -374,4 +300,51 @@ int mknodat(int dirfd, const char *path, mode_t mode, dev_t dev) {
 
 int initgroups(const char *user, gid_t group) {
     (void)user; (void)group; return 0;
+}
+
+/* ========== DNS 解析器 stub ========== */
+/* arpa/nameser.h 声明了 ns_* 函数，但 wasi-libc 不提供实现。
+ * nslookup.c (USE_LIBC_RESOLV=1) 依赖这些函数。
+ * 返回 -1 或 0 的 stub 实现保证链接通过，运行时 nslookup 不工作。 */
+
+#include <arpa/nameser.h>
+
+unsigned ns_get16(const unsigned char *cp) {
+    (void)cp;
+    return 0;
+}
+
+unsigned long ns_get32(const unsigned char *cp) {
+    (void)cp;
+    return 0;
+}
+
+void ns_put16(unsigned s, unsigned char *cp) {
+    (void)s; (void)cp;
+}
+
+void ns_put32(unsigned long l, unsigned char *cp) {
+    (void)l; (void)cp;
+}
+
+int ns_initparse(const unsigned char *msg, int msglen, ns_msg *handle) {
+    (void)msg; (void)msglen; (void)handle;
+    return -1;
+}
+
+int ns_parserr(ns_msg *handle, ns_sect section, int rrnum, ns_rr *rr) {
+    (void)handle; (void)section; (void)rrnum; (void)rr;
+    return -1;
+}
+
+int ns_skiprr(const unsigned char *ptr, const unsigned char *eom,
+              ns_sect section, int count) {
+    (void)ptr; (void)eom; (void)section; (void)count;
+    return -1;
+}
+
+int ns_name_uncompress(const unsigned char *msg, const unsigned char *eom,
+                       const unsigned char *src, char *dst, size_t dstsiz) {
+    (void)msg; (void)eom; (void)src; (void)dst; (void)dstsiz;
+    return -1;
 }

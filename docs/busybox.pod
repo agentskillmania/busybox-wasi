@@ -85,16 +85,17 @@ Currently available applets include:
 	bzcat, bzip2, cal, cat, chmod, chroot, cksum, cmp, comm, cp, cpio,
 	crc32, cut, date, dc, dd, df, diff, dirname, dmesg, dos2unix, dpkg,
 	dpkg-deb, du, echo, ed, egrep, env, expand, expr, factor, false,
-	fgrep, fold, fsync, getopt, grep, groups, gunzip, gzip, hd, head,
-	hexdump, install, link, ln, ls, lzcat, lzma, lzop, md5sum, mkdir,
-	mkfifo, mktemp, mv, nice, nl, nohup, od, paste, patch,
-	pipe_progress, printenv, printf, pwd, readlink, realpath, resume,
-	rev, rm, rmdir, rpm, rpm2cpio, run-parts, sed, seq, sha1sum,
-	sha256sum, sha3sum, sha512sum, shred, shuf, sleep, sort, split,
-	stat, strings, sum, sync, tac, tail, tar, tee, test, timeout, touch,
-	tr, true, truncate, tsort, tty, uname, unexpand, uniq, unix2dos,
-	unlink, unlzma, unxz, unzip, usleep, uudecode, uuencode, vi, wc,
-	which, xxd, xz, xzcat, yes, zcat
+	fgrep, fold, fsync, ftpget, ftpput, getopt, grep, groups, gunzip,
+	gzip, hd, head, hexdump, install, link, ln, ls, lzcat, lzma, lzop,
+	md5sum, mkdir, mkfifo, mktemp, mv, nc, netcat, nice, nl, nohup,
+	nslookup, od, paste, patch, pipe_progress, printenv, printf, pwd,
+	readlink, realpath, resume, rev, rm, rmdir, rpm, rpm2cpio,
+	run-parts, sed, seq, sha1sum, sha256sum, sha3sum, sha512sum, shred,
+	shuf, sleep, sort, split, stat, strings, sum, sync, tac, tail, tar,
+	tcpsvd, tee, telnet, test, timeout, touch, tr, true, truncate,
+	tsort, tty, udpsvd, uname, unexpand, uniq, unix2dos, unlink, unlzma,
+	unxz, unzip, usleep, uudecode, uuencode, vi, wc, wget, which, whois,
+	xxd, xz, xzcat, yes, zcat
 
 =head1 COMMAND DESCRIPTIONS
 
@@ -602,6 +603,29 @@ Write all buffered blocks in FILEs to disk
 
 	-d	Avoid syncing metadata
 
+=item B<ftpget>
+
+ftpget [OPTIONS] HOST [LOCAL_FILE] REMOTE_FILE
+
+Download a file via FTP
+
+	-c	Continue previous transfer
+	-v	Verbose
+	-u USER	Username
+	-p PASS	Password
+	-P PORT
+
+=item B<ftpput>
+
+ftpput [OPTIONS] HOST [REMOTE_FILE] LOCAL_FILE
+
+Upload a file to a FTP server
+
+	-v	Verbose
+	-u USER	Username
+	-p PASS	Password
+	-P PORT
+
 =item B<getopt>
 
 getopt [OPTIONS] [--] OPTSTRING PARAMS
@@ -889,6 +913,18 @@ Rename SOURCE to DEST, or move SOURCEs to DIRECTORY
 	-T	Refuse to move if DEST is a directory
 	-t DIR	Move all SOURCEs into DIR
 
+=item B<nc>
+
+nc [IPADDR PORT]
+
+Open a pipe to IP:PORT
+
+=item B<netcat>
+
+netcat [IPADDR PORT]
+
+Open a pipe to IP:PORT
+
 =item B<nice>
 
 nice [-n ADJUST] [PROG ARGS]
@@ -914,6 +950,14 @@ Write FILEs to standard output with line numbers added
 nohup PROG ARGS
 
 Run PROG immune to hangups, with output to a non-tty
+
+=item B<nslookup>
+
+nslookup [-type=QUERY_TYPE] [-debug] HOST [DNS_SERVER]
+
+Query DNS about HOST
+
+QUERY_TYPE: soa,ns,a,cname,mx,txt,ptr,srv,any
 
 =item B<od>
 
@@ -1306,6 +1350,38 @@ Create, extract, or list files from a tar file
 	--no-same-permissions	Don't restore access permissions
 	--to-command COMMAND	Pipe files to COMMAND
 
+=item B<tcpsvd>
+
+tcpsvd [-hEv] [-c N] [-C N[:MSG]] [-b N] [-u USER] [-l NAME] IP PORT PROG
+
+Create TCP socket, bind to IP:PORT and listen for incoming connections.
+Run PROG for each connection.
+
+	IP PORT		IP:PORT to listen on
+	PROG ARGS	Program to run
+	-u USER[:GRP]	Change to user/group after bind
+	-c N		Up to N connections simultaneously (default 30)
+	-b N		Allow backlog of approximately N TCP SYNs (default 20)
+	-C N[:MSG]	Allow only up to N connections from the same IP:
+			new connections from this IP address are closed
+			immediately, MSG is written to the peer before close
+	-E		Don't set up environment
+	-h		Look up peer's hostname
+	-l NAME		Local hostname (else look up local hostname in DNS)
+	-v		Verbose
+
+Environment if no -E:
+PROTO='TCP'
+TCPREMOTEADDR='ip:port'
+TCPLOCALADDR='ip:port'
+TCPORIGDSTADDR='ip:port' of destination before firewall
+	Useful for REDIRECTed-to-local connections:
+	iptables -t nat -A PREROUTING -p tcp --dport 80 -j REDIRECT --to 8080
+TCPCONCURRENCY=num_of_connects_from_this_ip
+If -h:
+TCPLOCALHOST='hostname' (-l NAME is used if specified)
+TCPREMOTEHOST='hostname'
+
 =item B<tee>
 
 tee [-ai] [FILE]...
@@ -1314,6 +1390,15 @@ Copy stdin to each FILE, and also to stdout
 
 	-a	Append to the given FILEs, don't overwrite
 	-i	Ignore interrupt signals (SIGINT)
+
+=item B<telnet>
+
+telnet [-a] [-l USER] HOST [PORT]
+
+Connect to telnet server
+
+	-a	Automatic login with $USER variable
+	-l USER	Automatic login as USER
 
 =item B<timeout>
 
@@ -1369,6 +1454,31 @@ tty [-s]
 Print file name of stdin's terminal
 
 	-s	Print nothing, only return exit status
+
+=item B<udpsvd>
+
+udpsvd [-hEv] [-c N] [-u USER] [-l NAME] IP PORT PROG
+
+Create UDP socket, bind to IP:PORT and wait for incoming packets.
+Run PROG for each packet, redirecting all further packets with same
+peer ip:port to it.
+
+	IP PORT		IP:PORT to listen on
+	PROG ARGS	Program to run
+	-u USER[:GRP]	Change to user/group after bind
+	-c N		Up to N connections simultaneously (default 30)
+	-E		Don't set up environment
+	-h		Look up peer's hostname
+	-l NAME		Local hostname (else look up local hostname in DNS)
+	-v		Verbose
+
+Environment if no -E:
+PROTO='UDP'
+UDPREMOTEADDR='ip:port'
+UDPLOCALADDR='ip:port'
+If -h:
+UDPLOCALHOST='hostname' (-l NAME is used if specified)
+UDPREMOTEHOST='hostname'
 
 =item B<uname>
 
@@ -1509,6 +1619,27 @@ Count lines, words, and bytes for FILEs (or stdin)
 	-w	Count words
 	-L	Print longest line length
 
+=item B<wget>
+
+wget [-cqS] [--spider] [-O FILE] [-o LOGFILE] [--header STR]
+	[--post-data STR | --post-file FILE] [-Y on/off]
+	[-P DIR] [-U AGENT] URL...
+
+Retrieve files via HTTP or FTP
+
+	--spider	Only check URL existence: $? is 0 if exists
+	--header STR	Add STR (of form 'header: value') to headers
+	--post-data STR	Send STR using POST method
+	--post-file FILE	Send FILE using POST method
+	-c		Continue retrieval of aborted transfer
+	-q		Quiet
+	-P DIR		Save to DIR (default .)
+	-S    		Show server response
+	-O FILE		Save to FILE ('-' for stdout)
+	-o LOGFILE	Log messages to FILE
+	-U STR		Use STR for User-Agent header
+	-Y on/off	Use proxy
+
 =item B<which>
 
 which [-a] COMMAND...
@@ -1516,6 +1647,15 @@ which [-a] COMMAND...
 Locate COMMAND
 
 	-a	Show all matches
+
+=item B<whois>
+
+whois [-i] [-h SERVER] [-p PORT] NAME...
+
+Query WHOIS info about NAME
+
+	-i	Show redirect results too
+	-h,-p	Server to query
 
 =item B<xxd>
 
