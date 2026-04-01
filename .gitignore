@@ -2,6 +2,7 @@
 
 # 编译产物
 *.o
+*.o.d
 *.a
 *.cmd
 *.map
@@ -9,5 +10,6 @@
 
 # 构建配置缓存
 .config.old
+.config.bak
 .kconfig.d
 .kernelrelease
