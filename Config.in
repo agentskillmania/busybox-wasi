@@ -737,7 +737,6 @@ source editors/Config.in
 source findutils/Config.in
 source loginutils/Config.in
 source e2fsprogs/Config.in
-source modutils/Config.in
 source util-linux/Config.in
 source miscutils/Config.in
 source networking/Config.in

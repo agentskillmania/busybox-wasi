@@ -476,7 +476,6 @@ libs-y		:= \
 		loginutils/ \
 		mailutils/ \
 		miscutils/ \
-		modutils/ \
 		networking/ \
 		networking/libiproute/ \
 		networking/udhcp/ \
