@@ -94,6 +94,154 @@ static int wsh_tokenize(char *cmd, char *tokens[], int max_t)
 	return n;
 }
 
+/* ===================== Glob 展开 ===================== */
+
+#include <dirent.h>
+
+/**
+ * 检查字符串是否含通配符字符（*, ?, [）。
+ */
+static int wsh_has_glob(const char *s)
+{
+	for (; *s; s++) {
+		if (*s == '*' || *s == '?' || *s == '[')
+			return 1;
+	}
+	return 0;
+}
+
+/**
+ * 简单通配符匹配：支持 * 和 ? 。
+ * pattern 中的 * 匹配任意字符串，? 匹配单个字符。
+ */
+static int wsh_glob_match(const char *pat, const char *str)
+{
+	while (*pat && *str) {
+		if (*pat == '*') {
+			pat++;
+			/* * 匹配零个或多个字符 */
+			if (!*pat) return 1;
+			while (*str) {
+				if (wsh_glob_match(pat, str))
+					return 1;
+				str++;
+			}
+			return wsh_glob_match(pat, str);
+		}
+		if (*pat == '?') {
+			pat++; str++;
+			continue;
+		}
+		if (*pat != *str)
+			return 0;
+		pat++; str++;
+	}
+	/* 剩余 pat 中只有 * 可以匹配空串 */
+	while (*pat == '*') pat++;
+	return *pat == '\0' && *str == '\0';
+}
+
+/**
+ * 对单个含通配符的路径做展开。
+ *
+ * 从路径中提取目录部分和文件名模式，
+ * 扫描目录匹配文件，返回匹配的完整路径。
+ *
+ * @param token    含通配符的路径（如 "/tmp/wsh_*.txt"）
+ * @param out      输出字符串数组
+ * @param max_out  数组容量
+ * @param pnout    输入当前数量 / 输出增加后的数量
+ * @return 0 成功，-1 失败
+ */
+static int wsh_glob_one(const char *token, char *out[], int max_out, int *pnout)
+{
+	/* 分离目录和文件名部分（堆分配避免栈溢出） */
+	char *dir = malloc(512);
+	char *full = malloc(512);
+	if (!dir || !full) { free(dir); free(full); return -1; }
+
+	const char *base;
+	const char *slash = strrchr(token, '/');
+	if (slash) {
+		int dlen = (int)(slash - token);
+		if (dlen == 0) {
+			dir[0] = '/'; dir[1] = '\0';
+		} else {
+			memcpy(dir, token, dlen);
+			dir[dlen] = '\0';
+		}
+		base = slash + 1;
+	} else {
+		dir[0] = '.'; dir[1] = '\0';
+		base = token;
+	}
+
+	if (!*base) { free(dir); free(full); return -1; }
+
+	DIR *dp = opendir(dir);
+	if (!dp) { free(dir); free(full); return -1; }
+
+	struct dirent *de;
+	while ((de = readdir(dp)) != NULL) {
+		if (de->d_name[0] == '.' && base[0] != '.')
+			continue;
+		if (!wsh_glob_match(base, de->d_name))
+			continue;
+
+		if (*pnout >= max_out - 1) break;
+
+		/* 构造完整路径 */
+		if (strcmp(dir, ".") == 0)
+			snprintf(full, 512, "%s", de->d_name);
+		else if (strcmp(dir, "/") == 0)
+			snprintf(full, 512, "/%s", de->d_name);
+		else
+			snprintf(full, 512, "%s/%s", dir, de->d_name);
+		out[(*pnout)++] = strdup(full);
+	}
+	closedir(dp);
+	free(dir);
+	free(full);
+	return 0;
+}
+
+/**
+ * 对 token 数组做 glob 展开。
+ *
+ * 含通配符的 token 替换为匹配文件列表；
+ * 无通配符或无匹配的 token 保持原样。
+ */
+static int wsh_glob_expand(char *tokens[], int nargs, int max_t)
+{
+	/* 堆分配避免栈溢出 */
+	char **out = malloc(max_t * sizeof(char *));
+	if (!out) return nargs;
+
+	int nout = 0;
+
+	for (int i = 0; i < nargs && nout < max_t - 1; i++) {
+		if (!wsh_has_glob(tokens[i])) {
+			out[nout++] = tokens[i];
+			continue;
+		}
+
+		int before = nout;
+		wsh_glob_one(tokens[i], out, max_t, &nout);
+
+		if (nout == before) {
+			/* 无匹配：保留原始 token */
+			out[nout++] = tokens[i];
+		}
+	}
+
+	for (int i = 0; i < nout; i++)
+		tokens[i] = out[i];
+	tokens[nout] = NULL;
+
+	free(out);
+	return nout;
+}
+
 /* ===================== 单命令执行 ===================== */
 
 /**
@@ -366,6 +514,7 @@ int wsh_run_pipeline(const char *cmdline)
 
 		char *tok[256];
 		int n = wsh_tokenize(cmd, tok, 256);
+		n = wsh_glob_expand(tok, n, 256);
 
 		if (n == 0) {
 			fprintf(stderr, "wsh: empty command\n");
@@ -424,6 +573,7 @@ int wsh_run_pipeline(const char *cmdline)
 
 		char *tok[256];
 		int n = wsh_tokenize(cmd, tok, 256);
+		n = wsh_glob_expand(tok, n, 256);
 		if (n == 0) {
 			fprintf(stderr, "wsh: empty pipe segment\n");
 			rc = 1;
