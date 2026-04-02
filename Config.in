@@ -736,7 +736,6 @@ source debianutils/Config.in
 source klibc-utils/Config.in
 source editors/Config.in
 source findutils/Config.in
-source init/Config.in
 source loginutils/Config.in
 source e2fsprogs/Config.in
 source modutils/Config.in

@@ -473,7 +473,6 @@ libs-y		:= \
 		e2fsprogs/ \
 		editors/ \
 		findutils/ \
-		init/ \
 		libbb/ \
 		libpwdgrp/ \
 		loginutils/ \
