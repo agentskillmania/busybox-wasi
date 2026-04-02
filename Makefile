@@ -482,7 +482,6 @@ libs-y		:= \
 		printutils/ \
 		runit/ \
 		shell/ \
-		sysklogd/ \
 		util-linux/ \
 		util-linux/volume_id/ \
 

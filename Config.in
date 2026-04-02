@@ -744,4 +744,3 @@ source printutils/Config.in
 source mailutils/Config.in
 source runit/Config.in
 source shell/Config.in
-source sysklogd/Config.in
