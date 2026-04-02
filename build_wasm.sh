@@ -31,9 +31,22 @@ echo "[2/5] 收集目标文件..."
 LIBS=()
 for f in $(find . -name "lib.a" -type f | sort); do
     ftype=$(file "$f" 2>/dev/null)
-    if echo "$ftype" | grep -qi "current ar archive"; then
-        LIBS+=("$f")
+    if ! echo "$ftype" | grep -qi "current ar archive"; then
+        continue
     fi
+    # 检查内部 .o 是否都是有效的 wasm 文件（跳过空壳 lib.a）
+    has_valid=0
+    tmpdir=$(mktemp -d)
+    $HOME/wasi-sdk/bin/llvm-ar x "$f" --output="$tmpdir" 2>/dev/null
+    for obj in "$tmpdir"/*.o; do
+        [ -f "$obj" ] || continue
+        if file "$obj" 2>/dev/null | grep -qi "WebAssembly"; then
+            has_valid=1
+            break
+        fi
+    done
+    rm -rf "$tmpdir"
+    [ "$has_valid" = "1" ] && LIBS+=("$f")
 done
 
 # 第三步：编译 wsh（WASM Shell，不走 BusyBox 构建系统）

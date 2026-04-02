@@ -18,6 +18,4 @@
 .kernelrelease
 
 autoconf.h
-.config
-.config.old
-.config.bak
+
