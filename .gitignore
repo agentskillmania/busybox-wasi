@@ -18,6 +18,10 @@
 .kernelrelease
 
 autoconf.h
+include/applets.h
+include/bbconfigopts.h
+include/bbconfigopts_bz2.h
+include/usage.h
 
 .DS_Store
 .tmp_versions/
