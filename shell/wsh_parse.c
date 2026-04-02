@@ -17,6 +17,8 @@
 enum {
 	WSH_TOK_WORD,
 	WSH_TOK_SEMI,
+	WSH_TOK_LPAREN,
+	WSH_TOK_RPAREN,
 	WSH_TOK_EOF
 };
 
@@ -55,6 +57,24 @@ static int wsh_tokenize(const char *input, struct wsh_tok *toks, int max)
 			continue;
 		}
 
+		/* ( — 子 shell 开括号 */
+		if (input[i] == '(') {
+			toks[n].start = &input[i];
+			toks[n].len = 1;
+			toks[n].type = WSH_TOK_LPAREN;
+			n++; i++;
+			continue;
+		}
+
+		/* ) — 子 shell 闭括号 */
+		if (input[i] == ')') {
+			toks[n].start = &input[i];
+			toks[n].len = 1;
+			toks[n].type = WSH_TOK_RPAREN;
+			n++; i++;
+			continue;
+		}
+
 		/* Word：引号和 $() 内不分割 */
 		int start = i;
 		int in_sq = 0, in_dq = 0, depth = 0;
@@ -81,7 +101,8 @@ static int wsh_tokenize(const char *input, struct wsh_tok *toks, int max)
 				i++; continue;
 			}
 			if (input[i] == ' ' || input[i] == '\t' ||
-			    input[i] == '\n' || input[i] == ';')
+			    input[i] == '\n' || input[i] == ';' ||
+			    input[i] == '(' || input[i] == ')')
 				break;
 			i++;
 		}
@@ -436,10 +457,50 @@ static int wsh_parse_list(const struct wsh_tok *toks, int pos, int end)
 			}
 		}
 
+		/* 子 shell ( ... ) */
+		if (toks[pos].type == WSH_TOK_LPAREN) {
+			/* 找匹配的 ) */
+			int depth = 1;
+			int j = pos + 1;
+			while (j < end && depth > 0) {
+				if (toks[j].type == WSH_TOK_LPAREN)
+					depth++;
+				else if (toks[j].type == WSH_TOK_RPAREN)
+					depth--;
+				j++;
+			}
+			if (depth != 0) {
+				fprintf(stderr, "wsh: unmatched '('\n");
+				rc = 1;
+				pos = end;
+				continue;
+			}
+			int close = j - 1; /* ) 的位置 */
+
+			/* 保存变量 → 执行 body → 恢复变量 */
+			struct wsh_var_snapshot *snap = wsh_vars_save();
+			rc = wsh_parse_list(toks, pos + 1, close);
+			wsh_vars_restore(snap);
+			wsh_set_last_exitcode(rc);
+
+			pos = close + 1;
+			continue;
+		}
+
+		/* 意外的 ) */
+		if (toks[pos].type == WSH_TOK_RPAREN) {
+			fprintf(stderr, "wsh: unexpected ')'\n");
+			rc = 2;
+			pos++;
+			continue;
+		}
+
 		/* 简单命令：收集到下一个 ; */
 		int cmd_start = pos;
 		while (pos < end &&
 		       toks[pos].type != WSH_TOK_SEMI &&
+		       toks[pos].type != WSH_TOK_LPAREN &&
+		       toks[pos].type != WSH_TOK_RPAREN &&
 		       toks[pos].type != WSH_TOK_EOF) {
 			pos++;
 		}

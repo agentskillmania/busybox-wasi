@@ -51,4 +51,21 @@ int wsh_get_last_exitcode(void);
  */
 char *wsh_expand(const char *str);
 
+/**
+ * 子 shell 变量快照（不透明类型）。
+ */
+struct wsh_var_snapshot;
+
+/**
+ * 保存当前变量表快照（深拷贝）。
+ * @return 快照指针（堆分配），传给 wsh_vars_restore 后自动释放。
+ */
+struct wsh_var_snapshot *wsh_vars_save(void);
+
+/**
+ * 从快照恢复变量表并释放快照。
+ * 子 shell 退出后调用，恢复外层变量环境。
+ */
+void wsh_vars_restore(struct wsh_var_snapshot *snap);
+
 #endif /* WSH_VARS_H */

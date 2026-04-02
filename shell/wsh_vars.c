@@ -91,6 +91,61 @@ int wsh_get_last_exitcode(void)
 	return g_last_exitcode;
 }
 
+/* ===================== 子 shell 快照 ===================== */
+
+/** 变量快照结构 */
+struct wsh_var_snapshot {
+	struct wsh_var *vars;
+	int nvars;
+	int last_exitcode;
+};
+
+struct wsh_var_snapshot *wsh_vars_save(void)
+{
+	struct wsh_var_snapshot *snap = malloc(sizeof(*snap));
+	if (!snap) return NULL;
+
+	snap->vars = NULL;
+	snap->nvars = g_nvars;
+	snap->last_exitcode = g_last_exitcode;
+
+	if (g_nvars > 0) {
+		snap->vars = malloc(sizeof(struct wsh_var) * (size_t)g_nvars);
+		if (!snap->vars) {
+			free(snap);
+			return NULL;
+		}
+		for (int i = 0; i < g_nvars; i++) {
+			snap->vars[i].name = strdup(g_vars[i].name);
+			snap->vars[i].value = strdup(g_vars[i].value);
+		}
+	}
+
+	return snap;
+}
+
+void wsh_vars_restore(struct wsh_var_snapshot *snap)
+{
+	if (!snap) return;
+
+	/* 清理当前变量 */
+	for (int i = 0; i < g_nvars; i++) {
+		free(g_vars[i].name);
+		free(g_vars[i].value);
+	}
+
+	/* 从快照恢复（转移所有权，避免二次 strdup） */
+	for (int i = 0; i < snap->nvars; i++) {
+		g_vars[i].name = snap->vars[i].name;
+		g_vars[i].value = snap->vars[i].value;
+	}
+	g_nvars = snap->nvars;
+	g_last_exitcode = snap->last_exitcode;
+
+	free(snap->vars);
+	free(snap);
+}
+
 /* ===================== 展开辅助 ===================== */
 
 /**
