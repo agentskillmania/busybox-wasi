@@ -203,6 +203,132 @@ static int wsh_read_file(const char *path, char **out, size_t *olen)
 	return 0;
 }
 
+/* ===================== 重定向解析 ===================== */
+
+/** 重定向信息 */
+struct wsh_redir {
+	char *out_path;   /* stdout 目标（> 或 >>），NULL 表示无 */
+	int  out_append;  /* 1=追加(>>)，0=覆盖(>) */
+	char *in_path;    /* stdin 来源（<），NULL 表示无 */
+	char *err_path;   /* stderr 目标（2>），NULL 表示无 */
+};
+
+/**
+ * 从命令字符串中解析重定向操作符，返回去掉重定向部分的新字符串。
+ * 同时填充 redir 结构体。
+ *
+ * 支持: >, >>, <, 2>
+ * 引号内的 > < 不视为重定向。
+ *
+ * @param cmd    原始命令字符串
+ * @param redir  输出重定向信息（路径都是 malloc，调用方 free）
+ * @return       清理后的命令字符串（malloc，调用方 free）
+ */
+static char *wsh_parse_redir(const char *cmd, struct wsh_redir *redir)
+{
+	redir->out_path = NULL;
+	redir->out_append = 0;
+	redir->in_path = NULL;
+	redir->err_path = NULL;
+
+	size_t len = strlen(cmd);
+	char *clean = malloc(len + 1);
+	int ci = 0; /* clean 写入位置 */
+	int in_sq = 0, in_dq = 0;
+
+	/* 跳过前导空白后的 word 可能是重定向目标，
+	 * 我们从右向左扫描，但简化起见从左向右处理。
+	 * 遇到未引号包裹的 >, >>, <, 2> 时提取文件路径。 */
+	int i = 0;
+	while (i < (int)len) {
+		/* 引号跟踪 */
+		if (!in_dq && cmd[i] == '\'') { in_sq = !in_sq; clean[ci++] = cmd[i++]; continue; }
+		if (!in_sq && cmd[i] == '"')  { in_dq = !in_dq; clean[ci++] = cmd[i++]; continue; }
+		if (in_sq || in_dq) { clean[ci++] = cmd[i++]; continue; }
+
+		/* 2> 或 2>> */
+		if (cmd[i] == '2' && i + 1 < (int)len && cmd[i + 1] == '>') {
+			/* 跳过 "2" 不写入 clean */
+			int j = i + 2;
+			int append = 0;
+			if (j < (int)len && cmd[j] == '>') { append = 1; j++; }
+			while (j < (int)len && (cmd[j] == ' ' || cmd[j] == '\t')) j++;
+			int s = j;
+			while (j < (int)len && cmd[j] != ' ' && cmd[j] != '\t' &&
+			       cmd[j] != ';' && cmd[j] != '|' && cmd[j] != '>' &&
+			       cmd[j] != '<')
+				j++;
+			if (j > s) {
+				redir->err_path = malloc(j - s + 1);
+				memcpy(redir->err_path, cmd + s, j - s);
+				redir->err_path[j - s] = '\0';
+				redir->out_append = append; /* 复用，2>> 时为追加 */
+			}
+			i = j;
+			/* 跳过后导空白 */
+			while (i < (int)len && (cmd[i] == ' ' || cmd[i] == '\t')) i++;
+			continue;
+		}
+
+		/* >> 或 > (非 2>) */
+		if (cmd[i] == '>') {
+			int j = i;
+			int append = 0;
+			j++;
+			if (j < (int)len && cmd[j] == '>') { append = 1; j++; }
+			while (j < (int)len && (cmd[j] == ' ' || cmd[j] == '\t')) j++;
+			int s = j;
+			while (j < (int)len && cmd[j] != ' ' && cmd[j] != '\t' &&
+			       cmd[j] != ';' && cmd[j] != '|' && cmd[j] != '>' &&
+			       cmd[j] != '<')
+				j++;
+			if (j > s) {
+				free(redir->out_path); /* 取最后一个 */
+				redir->out_path = malloc(j - s + 1);
+				memcpy(redir->out_path, cmd + s, j - s);
+				redir->out_path[j - s] = '\0';
+				redir->out_append = append;
+			}
+			i = j;
+			while (i < (int)len && (cmd[i] == ' ' || cmd[i] == '\t')) i++;
+			continue;
+		}
+
+		/* < */
+		if (cmd[i] == '<') {
+			int j = i + 1;
+			while (j < (int)len && (cmd[j] == ' ' || cmd[j] == '\t')) j++;
+			int s = j;
+			while (j < (int)len && cmd[j] != ' ' && cmd[j] != '\t' &&
+			       cmd[j] != ';' && cmd[j] != '|' && cmd[j] != '>' &&
+			       cmd[j] != '<')
+				j++;
+			if (j > s) {
+				free(redir->in_path);
+				redir->in_path = malloc(j - s + 1);
+				memcpy(redir->in_path, cmd + s, j - s);
+				redir->in_path[j - s] = '\0';
+			}
+			i = j;
+			while (i < (int)len && (cmd[i] == ' ' || cmd[i] == '\t')) i++;
+			continue;
+		}
+
+		clean[ci++] = cmd[i++];
+	}
+	clean[ci] = '\0';
+	return clean;
+}
+
+/** 释放 redir 中的动态分配 */
+static void wsh_redir_free(struct wsh_redir *r)
+{
+	free(r->out_path);
+	free(r->in_path);
+	free(r->err_path);
+	r->out_path = r->in_path = r->err_path = NULL;
+}
+
 /* ===================== 管道执行主函数 ===================== */
 
 int wsh_run_pipeline(const char *cmdline)
@@ -228,38 +354,62 @@ int wsh_run_pipeline(const char *cmdline)
 	 * freopen 会覆盖到新的 pipe 临时文件，最终通过 stderr 输出到终端。
 	 */
 	if (nseg == 1) {
+		/* 解析重定向 */
+		struct wsh_redir redir;
+		char *clean = wsh_parse_redir(segs[0], &redir);
+		free(buf);
+
 		char cmd[4096];
-		strncpy(cmd, segs[0], sizeof(cmd) - 1);
+		strncpy(cmd, clean, sizeof(cmd) - 1);
 		cmd[sizeof(cmd) - 1] = '\0';
+		free(clean);
 
 		char *tok[256];
 		int n = wsh_tokenize(cmd, tok, 256);
-		free(buf);
 
 		if (n == 0) {
 			fprintf(stderr, "wsh: empty command\n");
+			wsh_redir_free(&redir);
 			return 1;
 		}
 
-		/* 重定向 stdout 到临时文件 */
+		/* 输入重定向 */
+		if (redir.in_path) {
+			freopen(redir.in_path, "r", stdin);
+		}
+
+		/* 输出重定向：有重定向则写到目标文件，否则走临时文件 */
+		int redirected_out = (redir.out_path != NULL);
 		char out_path[256];
-		wsh_tmp_path(out_path, sizeof(out_path), 0);
-		if (freopen(out_path, "w", stdout) == NULL) {
-			fprintf(stderr, "wsh: cannot open pipe output\n");
-			return 1;
+		if (redirected_out) {
+			freopen(redir.out_path, redir.out_append ? "a" : "w", stdout);
+		} else {
+			wsh_tmp_path(out_path, sizeof(out_path), 0);
+			if (freopen(out_path, "w", stdout) == NULL) {
+				fprintf(stderr, "wsh: cannot open pipe output\n");
+				wsh_redir_free(&redir);
+				return 1;
+			}
+		}
+
+		if (redir.err_path) {
+			freopen(redir.err_path, "w", stderr);
 		}
 
 		int rc = wsh_exec(tok, n);
 		fflush(stdout);
 
-		/* 读临时文件 → 输出到 stderr（终端） */
-		char *result = NULL;
-		size_t rlen = 0;
-		if (wsh_read_file(out_path, &result, &rlen) == 0 && result) {
-			write(STDERR_FILENO, result, rlen);
-			free(result);
+		if (!redirected_out) {
+			/* 读临时文件 → 输出到 stderr（终端） */
+			char *result = NULL;
+			size_t rlen = 0;
+			if (wsh_read_file(out_path, &result, &rlen) == 0 && result) {
+				write(STDERR_FILENO, result, rlen);
+				free(result);
+			}
+			remove(out_path);
 		}
-		remove(out_path);
+		wsh_redir_free(&redir);
 		return rc;
 	}
 
