@@ -564,78 +564,88 @@ int wsh_run_pipeline(const char *cmdline)
 
 	/* ====== 多级管道：串行执行 ====== */
 	int rc = 0;
+	int last_redirected = 0;
 
 	for (int i = 0; i < nseg; i++) {
-		/* 复制当前段（分词会修改原串） */
+		struct wsh_redir seg_redir;
+		char *clean_seg = wsh_parse_redir(segs[i], &seg_redir);
+
 		char cmd[4096];
-		strncpy(cmd, segs[i], sizeof(cmd) - 1);
+		strncpy(cmd, clean_seg, sizeof(cmd) - 1);
 		cmd[sizeof(cmd) - 1] = '\0';
+		free(clean_seg);
 
 		char *tok[256];
 		int n = wsh_tokenize(cmd, tok, 256);
 		n = wsh_glob_expand(tok, n, 256);
 		if (n == 0) {
 			fprintf(stderr, "wsh: empty pipe segment\n");
+			wsh_redir_free(&seg_redir);
 			rc = 1;
 			goto cleanup;
 		}
 
-		/*
-		 * 设置 stdin：上游输出在上一次循环中已写入临时文件。
-		 * 临时文件路径: WSH_PIPE_PREFIX + i-1
-		 */
-		if (i > 0) {
+		if (seg_redir.in_path) {
+			if (freopen(seg_redir.in_path, "r", stdin) == NULL) {
+				fprintf(stderr, "wsh: cannot open %s\n", seg_redir.in_path);
+				wsh_redir_free(&seg_redir);
+				rc = 1;
+				goto cleanup;
+			}
+		} else if (i > 0) {
 			char in_path[256];
 			wsh_tmp_path(in_path, sizeof(in_path), i - 1);
-
 			if (freopen(in_path, "r", stdin) == NULL) {
 				fprintf(stderr, "wsh: cannot open pipe input\n");
+				wsh_redir_free(&seg_redir);
 				rc = 1;
 				goto cleanup;
 			}
 		}
 
-		/*
-		 * 设置 stdout：所有段都重定向到临时文件。
-		 * 最后一段的输出会在循环结束后通过 stderr 输出到终端。
-		 */
-		char out_path[256];
-		wsh_tmp_path(out_path, sizeof(out_path), i);
-
-		if (freopen(out_path, "w", stdout) == NULL) {
-			fprintf(stderr, "wsh: cannot open pipe output\n");
-			rc = 1;
-			goto cleanup;
+		if (i == nseg - 1 && seg_redir.out_path) {
+			last_redirected = 1;
+			if (freopen(seg_redir.out_path,
+			            seg_redir.out_append ? "a" : "w",
+			            stdout) == NULL) {
+				fprintf(stderr, "wsh: cannot open %s\n",
+				        seg_redir.out_path);
+				wsh_redir_free(&seg_redir);
+				rc = 1;
+				goto cleanup;
+			}
+		} else {
+			char out_path[256];
+			wsh_tmp_path(out_path, sizeof(out_path), i);
+			if (freopen(out_path, "w", stdout) == NULL) {
+				fprintf(stderr, "wsh: cannot open pipe output\n");
+				wsh_redir_free(&seg_redir);
+				rc = 1;
+				goto cleanup;
+			}
 		}
 
-		/* 执行命令 */
-		rc = wsh_exec(tok, n);
+		if (seg_redir.err_path)
+			freopen(seg_redir.err_path, "w", stderr);
 
-		/*
-		 * 上游 stdin 临时文件不再需要（已被当前段读完）。
-		 * 删除以节省磁盘空间。
-		 */
-		if (i > 0) {
+		rc = wsh_exec(tok, n);
+		fflush(stdout);
+
+		if (i > 0 && !seg_redir.in_path) {
 			char in_path[256];
 			wsh_tmp_path(in_path, sizeof(in_path), i - 1);
 			remove(in_path);
 		}
+
+		wsh_redir_free(&seg_redir);
 	}
 
-	/* ====== 输出最后一段的结果到终端 ====== */
-	{
+	if (!last_redirected) {
 		char out_path[256];
 		wsh_tmp_path(out_path, sizeof(out_path), nseg - 1);
-
 		char *result = NULL;
 		size_t rlen = 0;
 		if (wsh_read_file(out_path, &result, &rlen) == 0 && result) {
-			/*
-			 * 用 write(2, ...) 写到 stderr。
-			 * stderr 始终指向终端，从未被 freopen 重定向。
-			 * 在 WASM sandbox 中 stdout 和 stderr
-			 * 通常都指向同一个终端，用户看到的效果一样。
-			 */
 			write(STDERR_FILENO, result, rlen);
 			free(result);
 		}
