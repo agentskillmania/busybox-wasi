@@ -1,25 +1,19 @@
 /*
  * wsh_parse.h — wsh 解析器接口
  *
- * 负责 ; 分割、赋值检测等解析逻辑。
- * Step 6 将扩展为完整的递归下降解析器。
+ * 递归下降解析器：tokenize → parse_list → parse_if/for/while/exec。
  */
 #ifndef WSH_PARSE_H
 #define WSH_PARSE_H
 
-/** 最大命令段数（; 分割） */
-#define WSH_MAX_SEGS 256
-
 /**
- * 按 ; 分割命令列表。
- * 尊重 $() 嵌套和引号，不在嵌套/引号内分割。
+ * 执行完整输入（主入口）。
+ * 处理 ;, if/elif/else/fi, for/in/do/done, while/do/done。
  *
- * @param input  命令字符串（会被修改，\0 插入分割点）
- * @param segs   输出段数组（指向 input 内部子串）
- * @param max    数组容量
- * @return 段数
+ * @param input  命令字符串
+ * @return 最后一个命令的退出码
  */
-int wsh_split_semi(char *input, char *segs[], int max);
+int wsh_execute_input(const char *input);
 
 /**
  * 检测并执行变量赋值（NAME=VALUE 模式）。
