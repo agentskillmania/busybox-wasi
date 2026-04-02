@@ -480,9 +480,7 @@ libs-y		:= \
 		networking/libiproute/ \
 		networking/udhcp/ \
 		printutils/ \
-		procps/ \
 		runit/ \
-		selinux/ \
 		shell/ \
 		sysklogd/ \
 		util-linux/ \
