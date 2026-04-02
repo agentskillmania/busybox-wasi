@@ -466,7 +466,6 @@ core-y		:= \
 libs-y		:= \
 		archival/ \
 		archival/libarchive/ \
-		console-tools/ \
 		coreutils/ \
 		coreutils/libcoreutils/ \
 		debianutils/ \
