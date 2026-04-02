@@ -20,3 +20,5 @@
 autoconf.h
 
 .DS_Store
+.tmp_versions/
+include/config/
