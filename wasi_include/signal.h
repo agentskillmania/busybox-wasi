@@ -87,6 +87,8 @@ typedef struct {
     size_t ss_size;
 } stack_t;
 /* 函数声明 */
+/* sighandler_t — BusyBox hush 需要，WASI 不提供 */
+typedef void (*sighandler_t)(int);
 void (*signal(int sig, void (*func)(int)))(int);
 int kill(pid_t pid, int sig);
 int raise(int sig);

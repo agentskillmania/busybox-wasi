@@ -13,7 +13,7 @@ SYSROOT="$WASI_SDK/share/wasi-sysroot"
 # Preview2 编译器：POSIX socket 已内置
 # 注意：中间步骤 ld -r 需要 wasm-ld（wasm-component-ld 不支持 -r）
 # 用 wrapper 过滤 -nostdlib 等不兼容参数
-CC="$WASI_SDK/bin/wasm32-wasip2-clang --sysroot=$SYSROOT -I$PROJ_DIR/wasi_include -mllvm -wasm-enable-sjlj -mllvm -wasm-use-legacy-eh=0"
+CC="$WASI_SDK/bin/wasm32-wasip2-clang --sysroot=$SYSROOT -I$PROJ_DIR/wasi_include -include $PROJ_DIR/wasi_compat.h -mllvm -wasm-enable-sjlj -mllvm -wasm-use-legacy-eh=0"
 AR="$WASI_SDK/bin/llvm-ar"
 LD="$PROJ_DIR/wasm-ld-wrapper.sh"
 OUTPUT="$PROJ_DIR/busybox.wasm"

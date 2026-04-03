@@ -28,11 +28,8 @@
 // RUN_INIT config item is in klibc-utils
 
 //applet:IF_SWITCH_ROOT(APPLET(switch_root, BB_DIR_SBIN, BB_SUID_DROP))
-//                      APPLET_ODDNAME:name      main         location     suid_type     help
-//applet:IF_RUN_INIT(   APPLET_ODDNAME(run-init, switch_root, BB_DIR_SBIN, BB_SUID_DROP, run_init))
 
 //kbuild:lib-$(CONFIG_SWITCH_ROOT) += switch_root.o
-//kbuild:lib-$(CONFIG_RUN_INIT)    += switch_root.o
 
 #include <sys/vfs.h>
 #include <sys/mount.h>

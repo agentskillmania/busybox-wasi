@@ -26,3 +26,8 @@ include/usage.h
 .DS_Store
 .tmp_versions/
 include/config/
+
+# 构建时自动生成的头文件
+include/NUM_APPLETS.h
+include/applet_tables.h
+include/usage_compressed.h

@@ -9,6 +9,8 @@
 #include <signal.h>
 #include <unistd.h>
 #include <sys/types.h>
+#include <sys/resource.h>
+#include <sys/mman.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
@@ -170,8 +172,8 @@ int getpriority(int which, id_t who) { (void)which; (void)who; return 0; }
 int setpriority(int which, id_t who, int prio) { (void)which; (void)who; (void)prio; return 0; }
 int nice(int inc) { (void)inc; errno = ENOSYS; return -1; }
 
-int getrlimit(int resource, void *rlim) { (void)resource; (void)rlim; errno = ENOSYS; return -1; }
-int setrlimit(int resource, const void *rlim) { (void)resource; (void)rlim; errno = ENOSYS; return -1; }
+int getrlimit(int resource, struct rlimit *rlim) { (void)resource; (void)rlim; errno = ENOSYS; return -1; }
+int setrlimit(int resource, const struct rlimit *rlim) { (void)resource; (void)rlim; errno = ENOSYS; return -1; }
 
 int sethostname(const char *name, size_t len) { (void)name; (void)len; errno = ENOSYS; return -1; }
 int settimeofday(const struct timeval *tv, const struct timezone *tz) {
@@ -325,4 +327,32 @@ int ns_name_uncompress(const unsigned char *msg, const unsigned char *eom,
                        const unsigned char *src, char *dst, size_t dstsiz) {
     (void)msg; (void)eom; (void)src; (void)dst; (void)dstsiz;
     return -1;
+}
+
+/* ========== libpwdgrp 补充 stub（libpwdgrp/ 已删除） ========== */
+/* parse_chown_usergroup_or_die — 解析 "user:group" 字符串。
+ * WASM 环境没有 /etc/passwd，所有用户/组查找都会失败，直接报错。
+ * 不 include libbb.h 以避免宏依赖级联，使用前向声明。 */
+
+struct bb_uidgid_t;
+#define FAST_FUNC
+extern void bb_error_msg_and_die(const char *s, ...) __attribute__((noreturn));
+
+void FAST_FUNC parse_chown_usergroup_or_die(struct bb_uidgid_t *u, char *user_group) {
+    (void)u; (void)user_group;
+    bb_error_msg_and_die("chown: user/group lookup not supported in WASM");
+}
+
+/* get_uidgid — libpwdgrp 也提供了这个，补上 stub */
+extern int get_uidgid(void *u, const char *ug);
+int get_uidgid(void *u, const char *ug) {
+    (void)u; (void)ug;
+    return 0;
+}
+
+/* xget_uidgid — libpwdgrp 的 x 版本，失败时 die */
+void FAST_FUNC xget_uidgid(void *u, const char *ug);
+void FAST_FUNC xget_uidgid(void *u, const char *ug) {
+    (void)u; (void)ug;
+    bb_error_msg_and_die("user/group lookup not supported in WASM");
 }
