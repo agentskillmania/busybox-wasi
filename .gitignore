@@ -31,3 +31,11 @@ include/config/
 include/NUM_APPLETS.h
 include/applet_tables.h
 include/usage_compressed.h
+
+# applets/ 构建中间产物
+applets/applet_tables
+applets/.applet_tables.d
+applets/usage
+applets/.usage.d
+applets/usage_pod
+applets/usage_compressed
