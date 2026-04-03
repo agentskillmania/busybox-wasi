@@ -81,6 +81,18 @@ config BASH_IS_NONE
 
 endchoice
 
+config SHELL_WSH
+	bool # hidden option
+
+config WSH
+	bool "wsh (WASM shell)"
+	default n
+	select SHELL_WSH
+	help
+	  Minimal shell for WASM environments. Supports variable assignment,
+	  command substitution, and serial pipeline execution.
+	  No fork/pipe support - designed for single-process WASM runtime.
+
 
 config SHELL_ASH
 	bool #hidden option

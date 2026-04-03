@@ -6,6 +6,18 @@
  * 网络相关函数（socket/connect/bind 等）由 preview2 libc 原生提供。
  * 此文件仅包含 WASI 确实不支持的函数（fork/exec/pipe 等）。
  */
+
+/* 启用 WASI 模拟层（需要在 include 之前定义） */
+#ifndef _WASI_EMULATED_SIGNAL
+#define _WASI_EMULATED_SIGNAL
+#endif
+#ifndef _WASI_EMULATED_MMAN
+#define _WASI_EMULATED_MMAN
+#endif
+#ifndef _WASI_EMULATED_PROCESS_CLOCKS
+#define _WASI_EMULATED_PROCESS_CLOCKS
+#endif
+
 #include <signal.h>
 #include <unistd.h>
 #include <sys/types.h>

@@ -980,13 +980,7 @@ static NORETURN void run_applet_and_exit(const char *name, char **argv)
 	if (is_prefixed_with(name, "busybox"))
 		exit(busybox_main(/*unused:*/ 0, argv));
 #  endif
-	/* wsh: WASM shell, 不走 applet 表，单独分发 */
-	if (strcmp(name, "wsh") == 0) {
-		extern int wsh_main(int argc, char **argv);
-		int c = 1;
-		while (argv[c]) c++;
-		exit(wsh_main(c, argv));
-	}
+	/* wsh 已通过正式 applet 注册表注册，不再需要硬编码分发 */
 #  if NUM_APPLETS > 0
 	/* find_applet_by_name() search is more expensive, so goes second */
 	{

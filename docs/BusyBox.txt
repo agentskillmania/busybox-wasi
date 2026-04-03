@@ -89,8 +89,8 @@ COMMANDS
             sort, split, stat, strings, sum, sync, tac, tail, tar, tcpsvd, tee,
             telnet, test, timeout, touch, tr, true, truncate, tsort, tty,
             udpsvd, uname, unexpand, uniq, unix2dos, unlink, unlzma, unxz,
-            unzip, usleep, uudecode, uuencode, vi, wc, wget, which, whois, xxd,
-            xz, xzcat, yes, zcat
+            unzip, usleep, uudecode, uuencode, vi, wc, wget, which, whois, wsh,
+            xxd, xz, xzcat, yes, zcat
 
 COMMAND DESCRIPTIONS
     arch
@@ -1472,6 +1472,10 @@ COMMAND DESCRIPTIONS
 
                 -i      Show redirect results too
                 -h,-p   Server to query
+
+    wsh wsh [-c CMD]
+
+        WASM shell for single-process environments
 
     xxd xxd [-pri] [-g N] [-c N] [-l LEN] [-s OFS] [-o OFS] [FILE]
 

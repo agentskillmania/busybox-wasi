@@ -78,13 +78,25 @@ CFLAGS="$3"
 LDFLAGS="$4"
 O_FILES="$5"
 A_FILES="$6"
+
+# WASM: --allow-undefined 时需要 --whole-archive 保留所有 applet 实现
+# （applet 通过注册表发现，没有直接调用引用，GC 会误删）
+case "$LDFLAGS" in
+    *--allow-undefined*)
+        A_FILES="-Wl,--whole-archive $A_FILES -Wl,--no-whole-archive"
+        echo "WASM build: using --whole-archive for applet registration"
+        ;;
+esac
 # We try to drop libraries from LDLIBS if build works without them,
 # but ones from CONFIG_EXTRA_LDLIBS are always linked in.
 # (For example, musl has stub utmp implementation, and if you link with
 # a real utmp library in LDLIBS, dropping it "works" but resulting binary
 # does not work properly).
 LDLIBS="$7"
-CONFIG_EXTRA_LDLIBS="$8"
+# 收集所有剩余参数作为 CONFIG_EXTRA_LDLIBS
+# （当 libs-y 包含空格时，shell 分词会导致参数偏移）
+shift 7
+CONFIG_EXTRA_LDLIBS="$*"
 
 # The --sort-section option is not supported by older versions of ld
 SORT_SECTION="-Wl,--sort-section,alignment"
@@ -174,6 +186,12 @@ try $CC $CFLAGS $LDFLAGS \
 
 # Now try to remove each lib and build without it.
 # Stop when no lib can be removed.
+# WASM: --allow-undefined causes all lib removals to succeed, skip trimming
+case "$LDFLAGS" in
+    *--allow-undefined*)
+        echo "WASM build: skipping library auto-trimming"
+        ;;
+    *)
 while test "$LDLIBS"; do
     $debug && echo "Trying libraries: $LDLIBS"
     dropped_non_first_lib=false
@@ -206,6 +224,8 @@ while test "$LDLIBS"; do
     # in dropping some of the preceding ones)
     $dropped_non_first_lib || break
 done
+    ;;
+esac
 
 # Make the binary with final, minimal list of libs
 echo "Final link with: ${LDLIBS:-<none>}"

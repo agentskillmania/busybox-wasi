@@ -1,0 +1,2 @@
+# wasi/Kbuild — WASI 兼容层编译规则
+lib-y += wasi_stubs.o

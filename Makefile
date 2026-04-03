@@ -484,6 +484,7 @@ libs-y		:= \
 		shell/ \
 		util-linux/ \
 		util-linux/volume_id/ \
+		wasi/ \
 
 endif # KBUILD_EXTMOD
 

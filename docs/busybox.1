@@ -233,8 +233,8 @@ Currently available applets include:
 \&        sort, split, stat, strings, sum, sync, tac, tail, tar, tcpsvd, tee,
 \&        telnet, test, timeout, touch, tr, true, truncate, tsort, tty,
 \&        udpsvd, uname, unexpand, uniq, unix2dos, unlink, unlzma, unxz,
-\&        unzip, usleep, uudecode, uuencode, vi, wc, wget, which, whois, xxd,
-\&        xz, xzcat, yes, zcat
+\&        unzip, usleep, uudecode, uuencode, vi, wc, wget, which, whois, wsh,
+\&        xxd, xz, xzcat, yes, zcat
 .Ve
 .SH "COMMAND DESCRIPTIONS"
 .IX Header "COMMAND DESCRIPTIONS"
@@ -1853,6 +1853,11 @@ Query \s-1WHOIS\s0 info about \s-1NAME\s0
 \&        \-i      Show redirect results too
 \&        \-h,\-p   Server to query
 .Ve
+.IP "\fBwsh\fR" 4
+.IX Item "wsh"
+wsh [\-c \s-1CMD\s0]
+.Sp
+\&\s-1WASM\s0 shell for single-process environments
 .IP "\fBxxd\fR" 4
 .IX Item "xxd"
 xxd [\-pri] [\-g N] [\-c N] [\-l \s-1LEN\s0] [\-s \s-1OFS\s0] [\-o \s-1OFS\s0] [\s-1FILE\s0]

@@ -1,3 +1,10 @@
+//applet:IF_WSH(APPLET(wsh, BB_DIR_BIN, BB_SUID_DROP))
+//kbuild:lib-$(CONFIG_SHELL_WSH) += wsh.o wsh_pipe.o wsh_vars.o wsh_parse.o
+//usage:#define wsh_trivial_usage
+//usage:       "[-c CMD]"
+//usage:#define wsh_full_usage "\n\n"
+//usage:       "WASM shell for single-process environments"
+
 /*
  * wsh — BusyBox WASM Shell (wasm shell)
  *
