@@ -14,6 +14,7 @@ JOBS="$(sysctl -n hw.ncpu 2>/dev/null || nproc)"
 
 echo "=== 编译 busybox 1.37.0 → WASM (via Make/Kbuild) ==="
 
+make -C "$PROJ_DIR" ARCH=wasm32 WASI_SDK="$WASI_SDK" clean
 make -C "$PROJ_DIR" ARCH=wasm32 WASI_SDK="$WASI_SDK" SKIP_STRIP=y -j"$JOBS"
 
 # 重命名为 .wasm
