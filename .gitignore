@@ -11,6 +11,11 @@
 *.wasm
 *.tmp
 
+# 链接产物
+busybox
+busybox_unstripped
+busybox.wasm
+
 # 构建配置缓存
 .config.old
 .config.bak
