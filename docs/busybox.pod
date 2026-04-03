@@ -89,13 +89,13 @@ Currently available applets include:
 	gzip, hd, head, hexdump, install, link, ln, ls, lzcat, lzma, lzop,
 	md5sum, mkdir, mkfifo, mktemp, mv, nc, netcat, nice, nl, nohup,
 	nslookup, od, paste, patch, pipe_progress, printenv, printf, pwd,
-	readlink, realpath, resume, rev, rm, rmdir, rpm, rpm2cpio,
-	run-parts, sed, seq, sha1sum, sha256sum, sha3sum, sha512sum, shred,
-	shuf, sleep, sort, split, stat, strings, sum, sync, tac, tail, tar,
-	tcpsvd, tee, telnet, test, timeout, touch, tr, true, truncate,
-	tsort, tty, udpsvd, uname, unexpand, uniq, unix2dos, unlink, unlzma,
-	unxz, unzip, usleep, uudecode, uuencode, vi, wc, wget, which, whois,
-	xxd, xz, xzcat, yes, zcat
+	readlink, realpath, rev, rm, rmdir, rpm, rpm2cpio, run-parts, sed,
+	seq, sha1sum, sha256sum, sha3sum, sha512sum, shred, shuf, sleep,
+	sort, split, stat, strings, sum, sync, tac, tail, tar, tcpsvd, tee,
+	telnet, test, timeout, touch, tr, true, truncate, tsort, tty,
+	udpsvd, uname, unexpand, uniq, unix2dos, unlink, unlzma, unxz,
+	unzip, usleep, uudecode, uuencode, vi, wc, wget, which, whois, xxd,
+	xz, xzcat, yes, zcat
 
 =head1 COMMAND DESCRIPTIONS
 
@@ -1019,12 +1019,6 @@ Display the value of a symlink
 realpath FILE...
 
 Print absolute pathnames of FILEs
-
-=item B<resume>
-
-resume BLOCKDEV [OFFSET]
-
-Restore system state from 'suspend-to-disk' data in BLOCKDEV
 
 =item B<rev>
 
