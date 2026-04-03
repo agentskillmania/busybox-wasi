@@ -86,6 +86,45 @@
 #define ENABLE_FEATURE_VERBOSE 0
 #endif
 
+/* shell — 删除 ash 后 ENABLE_SHELL_ASH 不再由 autoconf.h 定义 */
+#ifndef ENABLE_SHELL_ASH
+#define ENABLE_SHELL_ASH 0
+#define IF_SHELL_ASH(...)
+#endif
+
+/* procps 的 pmap — 已删除模块的选项 */
+#ifndef ENABLE_PMAP
+#define ENABLE_PMAP 0
+#define IF_PMAP(...)
+#endif
+
+/* procps 的 kill/killall5 — 已删除模块 */
+#ifndef ENABLE_KILL
+#define ENABLE_KILL 0
+#define IF_KILL(...)
+#endif
+#ifndef ENABLE_KILLALL5
+#define ENABLE_KILLALL5 0
+#define IF_KILLALL5(...)
+#endif
+
+/* shell 内部选项 — ash 删除后不再由 kconfig 生成 */
+#ifndef ENABLE_ASH_PRINTF
+#define ENABLE_ASH_PRINTF 0
+#endif
+#ifndef ENABLE_HUSH_PRINTF
+#define ENABLE_HUSH_PRINTF 0
+#endif
+#ifndef ENABLE_ASH_TEST
+#define ENABLE_ASH_TEST 0
+#endif
+#ifndef ENABLE_HUSH_TEST
+#define ENABLE_HUSH_TEST 0
+#endif
+#ifndef ENABLE_ASH_BASH_COMPAT
+#define ENABLE_ASH_BASH_COMPAT 0
+#endif
+
 /* ================================================================
  * off_t 大小检查 — libbb.h 断言 sizeof(off_t)==sizeof(uoff_t)
  * WASM32 下 off_t 是 64bit（_FILE_OFFSET_BITS=64），uoff_t 也是 64bit，

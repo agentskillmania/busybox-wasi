@@ -7,9 +7,6 @@
 
 lib-y:=
 
-lib-$(CONFIG_SHELL_ASH) += ash.o ash_ptr_hack.o shell_common.o
-lib-$(CONFIG_ASH_RANDOM_SUPPORT) += random.o
-lib-$(CONFIG_CTTYHACK) += cttyhack.o
 lib-$(CONFIG_SHELL_HUSH) += hush.o match.o shell_common.o
 lib-$(CONFIG_HUSH_RANDOM_SUPPORT) += random.o
 lib-$(CONFIG_SHELL_WSH) += wsh.o wsh_pipe.o wsh_vars.o wsh_parse.o
