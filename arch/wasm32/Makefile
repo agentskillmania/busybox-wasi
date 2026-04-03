@@ -22,6 +22,10 @@ CPPFLAGS += -I$(srctree)/wasi_include -include $(srctree)/wasi_compat.h
 # SjLj 异常处理（wasi-preview2 需要此选项支持 setjmp/longjmp）
 CPPFLAGS += -mllvm -wasm-enable-sjlj -mllvm -wasm-use-legacy-eh=0
 
+# 关闭不影响质量的编译警告
+# 注意：此文件在 Makefile.flags 之前被 include，CFLAGS 会被 Makefile.flags 覆盖。
+# 因此 -Wno- 标志通过 CONFIG_EXTRA_CFLAGS 追加（在 Makefile.flags 之后生效）。
+
 # 链接标志：--allow-undefined 容忍未解析符号（wasi 组件模型限制）
 # --error-limit=0 显示所有链接错误
 LDFLAGS += -Wl,--allow-undefined -Wl,--error-limit=0
