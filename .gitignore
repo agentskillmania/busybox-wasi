@@ -40,3 +40,10 @@ applets/.usage.d
 applets/usage_pod
 applets/usage_compressed
 docs/busybox.net/
+
+# 自动生成的文档
+docs/BusyBox.html
+docs/busybox.1
+docs/busybox.pod
+docs/busybox_footer.pod
+docs/busybox_header.pod
