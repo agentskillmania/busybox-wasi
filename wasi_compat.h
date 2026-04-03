@@ -86,10 +86,14 @@
 #define ENABLE_FEATURE_VERBOSE 0
 #endif
 
-/* shell — 删除 ash 后 ENABLE_SHELL_ASH 不再由 autoconf.h 定义 */
+/* shell — 删除 ash/hush 后 ENABLE_SHELL_ASH/HUSH 不再由 autoconf.h 定义 */
 #ifndef ENABLE_SHELL_ASH
 #define ENABLE_SHELL_ASH 0
 #define IF_SHELL_ASH(...)
+#endif
+#ifndef ENABLE_SHELL_HUSH
+#define ENABLE_SHELL_HUSH 0
+#define IF_SHELL_HUSH(...)
 #endif
 
 /* procps 的 pmap — 已删除模块的选项 */
