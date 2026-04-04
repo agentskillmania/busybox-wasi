@@ -59,37 +59,183 @@ wasmtime -W exceptions=y --dir=/tmp busybox.wasm wsh -c 'echo hello | tr a-z A-Z
 
 ## 支持的命令（140 个）
 
-### 压缩/归档工具
+### 归档工具
 
-`bunzip2` `bzcat` `bzip2` `cpio` `dpkg` `dpkg-deb` `gunzip` `gzip` `lzcat` `lzma` `lzop` `rpm` `rpm2cpio` `tar` `unlzma` `unxz` `unzip` `xz` `xzcat` `zcat`
+| 命令 | 说明 |
+|------|------|
+| `bunzip2` | 解压 bzip2 文件 |
+| `bzcat` | 解压 bzip2 到 stdout |
+| `bzip2` | bzip2 压缩 |
+| `cpio` | 归档拷贝 |
+| `dpkg` | Debian 包管理器 |
+| `dpkg-deb` | Debian 包归档工具 |
+| `gunzip` | 解压 gzip 文件 |
+| `gzip` | gzip 压缩 |
+| `lzcat` | 解压 lzma 到 stdout |
+| `lzma` | lzma 压缩 |
+| `lzop` | lzop 压缩 |
+| `rpm` | RPM 包管理器 |
+| `rpm2cpio` | RPM 转 cpio |
+| `tar` | 磁带归档工具 |
+| `unlzma` | 解压 lzma 文件 |
+| `unxz` | 解压 xz 文件 |
+| `unzip` | 解压 zip 归档 |
+| `xz` | xz 压缩 |
+| `xzcat` | 解压 xz 到 stdout |
+| `zcat` | 解压 gzip 到 stdout |
 
 ### 核心工具（Coreutils）
 
-`arch` `base32` `base64` `basename` `cat` `chroot` `chmod` `cksum` `comm` `cp` `crc32` `cut` `date` `dd` `df` `dirname` `dos2unix` `unix2dos` `du` `echo` `env` `expand` `unexpand` `expr` `factor` `false` `fold` `groups` `head` `install` `link` `ln` `ls` `md5sum` `sha1sum` `sha256sum` `sha3sum` `sha512sum` `mkdir` `mkfifo` `mktemp` `mv` `nice` `nl` `nohup` `od` `paste` `printenv` `printf` `pwd` `readlink` `realpath` `rm` `rmdir` `seq` `shred` `shuf` `sleep` `sort` `split` `stat` `sum` `sync` `fsync` `tac` `tail` `tee` `test` `timeout` `touch` `tr` `true` `truncate` `tsort` `tty` `uname` `uniq` `unlink` `usleep` `uudecode` `uuencode` `wc` `yes`
+| 命令 | 说明 |
+|------|------|
+| `arch` | 打印机器架构 |
+| `base32` | Base32 编解码 |
+| `base64` | Base64 编解码 |
+| `basename` | 去除目录和后缀 |
+| `cat` | 连接文件 |
+| `chroot` | 切换根目录 |
+| `chmod` | 修改文件权限 |
+| `cksum` | CRC 和字节计数 |
+| `comm` | 比较已排序文件 |
+| `cp` | 复制文件 |
+| `crc32` | CRC32 校验 |
+| `cut` | 去除行中指定部分 |
+| `date` | 打印/设置日期 |
+| `dd` | 转换并复制文件 |
+| `df` | 磁盘剩余空间 |
+| `dirname` | 去除文件名 |
+| `dos2unix` | DOS 换行转 Unix |
+| `unix2dos` | Unix 换行转 DOS |
+| `du` | 磁盘用量 |
+| `echo` | 输出文本 |
+| `env` | 设置环境变量 |
+| `expand` | Tab 转空格 |
+| `unexpand` | 空格转 Tab |
+| `expr` | 求值表达式 |
+| `factor` | 因数分解 |
+| `false` | 返回 false |
+| `fold` | 折行 |
+| `groups` | 打印组归属 |
+| `head` | 输出前 N 行 |
+| `install` | 复制文件并设置属性 |
+| `link` | 创建硬链接 |
+| `ln` | 创建链接 |
+| `ls` | 列出目录内容 |
+| `md5sum` | MD5 校验 |
+| `sha1sum` | SHA1 校验 |
+| `sha256sum` | SHA256 校验 |
+| `sha3sum` | SHA3 校验 |
+| `sha512sum` | SHA512 校验 |
+| `mkdir` | 创建目录 |
+| `mkfifo` | 创建命名管道 |
+| `mktemp` | 创建临时文件 |
+| `mv` | 移动/重命名文件 |
+| `nice` | 设置进程优先级 |
+| `nl` | 标行号 |
+| `nohup` | 免挂断运行 |
+| `od` | 八进制转储 |
+| `paste` | 合并文件行 |
+| `printenv` | 打印环境变量 |
+| `printf` | 格式化输出 |
+| `pwd` | 打印工作目录 |
+| `readlink` | 打印符号链接目标 |
+| `realpath` | 打印解析后路径 |
+| `rm` | 删除文件 |
+| `rmdir` | 删除目录 |
+| `seq` | 输出数字序列 |
+| `shred` | 安全覆写文件 |
+| `shuf` | 随机打乱行 |
+| `sleep` | 延时 |
+| `sort` | 排序 |
+| `split` | 分割文件 |
+| `stat` | 文件状态 |
+| `sum` | 校验和与块计数 |
+| `sync` | 刷新文件系统缓存 |
+| `fsync` | 同步文件到磁盘 |
+| `tac` | 逆序连接 |
+| `tail` | 输出末尾行 |
+| `tee` | 从 stdin 读，写 stdout 和文件 |
+| `test` | 文件类型和值测试 |
+| `timeout` | 带超时运行 |
+| `touch` | 修改文件时间戳 |
+| `tr` | 字符转换 |
+| `true` | 返回 true |
+| `truncate` | 缩减/扩展文件 |
+| `tsort` | 拓扑排序 |
+| `tty` | 打印终端名 |
+| `uname` | 打印系统信息 |
+| `uniq` | 去重行 |
+| `unlink` | 删除单个文件 |
+| `usleep` | 微秒延时 |
+| `uudecode` | 解码 uuencode 数据 |
+| `uuencode` | 编码二进制数据 |
+| `wc` | 统计字/行/字节 |
+| `yes` | 重复输出字符串 |
 
 ### 编辑器
 
-`awk` `cmp` `diff` `ed` `patch` `sed` `vi`
+| 命令 | 说明 |
+|------|------|
+| `awk` | 模式扫描语言 |
+| `cmp` | 逐字节比较文件 |
+| `diff` | 逐行比较文件 |
+| `ed` | 行编辑器 |
+| `patch` | 应用差异 |
+| `sed` | 流编辑器 |
+| `vi` | 屏幕编辑器 |
 
 ### 查找工具
 
-`egrep` `fgrep` `grep`
+| 命令 | 说明 |
+|------|------|
+| `egrep` | 扩展正则搜索 |
+| `fgrep` | 固定字符串搜索 |
+| `grep` | 文本模式搜索 |
 
 ### 网络工具
 
-`ftpget` `ftpput` `nc`（`netcat`）`nslookup` `tcpsvd` `telnet` `udpsvd` `wget` `whois`
+| 命令 | 说明 |
+|------|------|
+| `ftpget` | FTP 下载 |
+| `ftpput` | FTP 上传 |
+| `nc` / `netcat` | TCP/UDP 网络工具 |
+| `nslookup` | DNS 查询 |
+| `tcpsvd` | TCP 服务守护进程 |
+| `telnet` | Telnet 客户端 |
+| `udpsvd` | UDP 服务守护进程 |
+| `wget` | HTTP/HTTPS 下载 |
+| `whois` | WHOIS 客户端 |
 
 ### 系统工具
 
-`cal` `dmesg` `getopt` `hd` `hexdump` `rev` `xxd`
+| 命令 | 说明 |
+|------|------|
+| `cal` | 显示日历 |
+| `dmesg` | 打印内核消息 |
+| `getopt` | 解析命令选项 |
+| `hd` | 十六进制转储（同 hexdump -C） |
+| `hexdump` | 十六进制转储 |
+| `rev` | 反转行 |
+| `xxd` | 十六进制转储 |
 
 ### 杂项工具
 
-`ascii` `bc` `dc` `pipe_progress` `run-parts` `strings` `which`
+| 命令 | 说明 |
+|------|------|
+| `ascii` | 打印 ASCII 表 |
+| `bc` | 任意精度计算器 |
+| `dc` | 桌面计算器 |
+| `pipe_progress` | 显示管道进度 |
+| `run-parts` | 执行目录中的脚本 |
+| `strings` | 打印可打印字符串 |
+| `which` | 定位命令 |
+| `wsh` | WASM shell（自定义） |
 
 ### Shell
 
-`wsh` —— 专为 WASM 环境设计的轻量 shell，支持变量赋值、命令替换和串行管道执行。不支持 fork/pipe（WASM 单进程限制）。
+| 命令 | 说明 |
+|------|------|
+| `wsh` | WASM 环境轻量 shell |
 
 ## 架构
 
@@ -122,47 +268,25 @@ wasmtime -W exceptions=y --dir=/tmp busybox.wasm wsh -c 'echo hello | tr a-z A-Z
 |------|------|
 | `wasi_main.c` | 入口桥接：`__main_argc_argv` -> `busybox_real_main` |
 | `wasi/wasi_stubs.c` | POSIX 函数 stub（fork、pipe、signal 等），返回 `ENOSYS` 或安全默认值 |
+| `wasi/wasi_compat.h` | 函数声明补丁，修复 WASI 头文件缺失的声明 |
 | `wasi_include/` | 补充 WASI 缺失的 POSIX 定义的头文件目录 |
 | `arch/wasm32/Makefile` | WASM 工具链配置 |
 | `wasm-ld-wrapper.sh` | 过滤 `-nostdlib`，兼容 wasm-ld |
 
-### 工作原理
+## 手动构建
 
-1. 使用 wasi-sdk 的 `wasm32-wasip2-clang` 编译 BusyBox 源码
-2. 定义 `-D__linux__` 激活 BusyBox 的 Linux 代码路径
-3. 缺失的 POSIX API 通过 stub 实现，返回 `ENOSYS`（函数未实现）
-4. 所有符号在链接时完全解析
-5. 产出的 WASM 二进制可在任何 WASI Preview 2 运行时中运行
-
-## 构建系统
-
-### 构建命令
+如果不使用 `build_wasm.sh` 脚本：
 
 ```bash
+make clean
 make ARCH=wasm32 WASI_SDK=/path/to/wasi-sdk SKIP_STRIP=y -j$(nproc)
+cp busybox_unstripped busybox.wasm
 ```
 
-### 配置
-
-构建使用 `configs/wasm_defconfig`。修改方式：
+修改构建配置可编辑 `configs/wasm_defconfig`，或运行：
 
 ```bash
-# 加载 WASM 配置
-make wasm_defconfig
-
-# 交互式菜单
 make ARCH=wasm32 WASI_SDK=$HOME/wasi-sdk menuconfig
-```
-
-关键配置项：
-- `CONFIG_STATIC=y` — 静态链接（WASM 必须）
-- `CONFIG_NOMMU=y` — 无内存管理单元
-- `CONFIG_WSH=y` — 自定义 WASM shell（替代 ash/hush）
-
-### 清理重建
-
-```bash
-make clean && make ARCH=wasm32 WASI_SDK=$HOME/wasi-sdk SKIP_STRIP=y -j$(nproc)
 ```
 
 ## 限制
@@ -183,20 +307,6 @@ make clean && make ARCH=wasm32 WASI_SDK=$HOME/wasi-sdk SKIP_STRIP=y -j$(nproc)
 **能正常工作的命令**：文件操作（cat、cp、mv、rm、ls）、文本处理（grep、sed、awk、sort）、压缩（gzip、bzip2、xz）、校验和（md5sum、sha256sum）等单进程工具。
 
 **不能工作的命令**：需要进程管理的命令（ps、top、kill）、挂载操作（mount、umount）、用户管理（useradd、passwd）或进程间管道的命令。
-
-## 开发
-
-### 添加 POSIX Stub
-
-编译时遇到未定义函数错误时：
-
-1. **缺少声明**：在 `wasi_compat.h` 中添加前向声明
-2. **缺少定义**：在 `wasi/wasi_stubs.c` 中添加 stub 实现
-3. **缺少类型/常量**：在 `wasi_include/` 对应头文件中添加
-
-### 修改构建配置
-
-编辑 `configs/wasm_defconfig` 或使用 `menuconfig`。修改后需 `make clean` 再重新构建。
 
 ## 许可证
 

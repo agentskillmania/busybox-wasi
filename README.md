@@ -270,48 +270,25 @@ The project adds a compatibility layer between BusyBox and the WASI runtime:
 |------|---------|
 | `wasi_main.c` | Entry bridge: `__main_argc_argv` -> `busybox_real_main` |
 | `wasi/wasi_stubs.c` | POSIX function stubs (fork, pipe, signal, etc.) returning `ENOSYS` or safe defaults |
+| `wasi/wasi_compat.h` | Function declarations patching WASI header gaps |
 | `wasi_include/` | Header files supplementing missing POSIX definitions |
 | `arch/wasm32/Makefile` | Toolchain configuration for WASM build |
 | `wasm-ld-wrapper.sh` | Filters `-nostdlib` for wasm-ld compatibility |
-| `wasi/wasi_compat.h` | Function declarations patching WASI header gaps |
 
-### How It Works
+## Manual Build
 
-1. BusyBox source is compiled with `wasm32-wasip2-clang` from wasi-sdk
-2. `-D__linux__` is defined to activate Linux code paths in BusyBox
-3. Missing POSIX APIs are provided as stubs that return `ENOSYS` (function not implemented)
-4. All required symbols are fully resolved at link time
-5. The resulting WASM binary runs in any WASI Preview 2 runtime
-
-## Build System
-
-### Build Command
+If you don't want to use `build_wasm.sh`:
 
 ```bash
+make clean
 make ARCH=wasm32 WASI_SDK=/path/to/wasi-sdk SKIP_STRIP=y -j$(nproc)
+cp busybox_unstripped busybox.wasm
 ```
 
-### Configuration
-
-The build uses `configs/wasm_defconfig`. To modify:
+To modify the build configuration, edit `configs/wasm_defconfig` or run:
 
 ```bash
-# Load WASM config
-make wasm_defconfig
-
-# Interactive menu
 make ARCH=wasm32 WASI_SDK=$HOME/wasi-sdk menuconfig
-```
-
-Key configuration choices:
-- `CONFIG_STATIC=y` — Static linking (required for WASM)
-- `CONFIG_NOMMU=y` — No memory management unit
-- `CONFIG_WSH=y` — Custom WASM shell (replaces ash/hush)
-
-### Clean Build
-
-```bash
-make clean && make ARCH=wasm32 WASI_SDK=$HOME/wasi-sdk SKIP_STRIP=y -j$(nproc)
 ```
 
 ## Limitations
@@ -332,20 +309,6 @@ This is a WebAssembly port running in a sandboxed environment. Many POSIX featur
 Commands that **work well**: file operations (cat, cp, mv, rm, ls), text processing (grep, sed, awk, sort), compression (gzip, bzip2, xz), checksums (md5sum, sha256sum), and other single-process utilities.
 
 Commands that **don't work**: anything requiring process management (ps, top, kill), mounting (mount, umount), user management (useradd, passwd), or inter-process pipes.
-
-## Development
-
-### Adding a POSIX Stub
-
-When a new compilation error mentions an undefined function:
-
-1. If it's a **missing declaration**: add a forward declaration to `wasi_compat.h`
-2. If it's a **missing definition**: add a stub to `wasi/wasi_stubs.c`
-3. If it's a **missing type/constant**: add to the appropriate file in `wasi_include/`
-
-### Modifying Build Configuration
-
-Edit `configs/wasm_defconfig` or use `menuconfig`. After changes, run `make clean` before rebuilding.
 
 ## License
 
