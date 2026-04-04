@@ -50,3 +50,7 @@ docs/busybox.net/
 docs/BusyBox.html
 docs/busybox.1
 docs/busybox.pod
+.config
+
+.backup
+.before

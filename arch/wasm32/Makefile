@@ -22,9 +22,22 @@ CPPFLAGS += -I$(srctree)/wasi_include -include $(srctree)/wasi_compat.h
 # SjLj 异常处理（wasi-preview2 需要此选项支持 setjmp/longjmp）
 CPPFLAGS += -mllvm -wasm-enable-sjlj -mllvm -wasm-use-legacy-eh=0
 
-# 关闭不影响质量的编译警告
-# 注意：此文件在 Makefile.flags 之前被 include，CFLAGS 会被 Makefile.flags 覆盖。
-# 因此 -Wno- 标志通过 CONFIG_EXTRA_CFLAGS 追加（在 Makefile.flags 之后生效）。
+# WASI 平台补丁定义
+# 启用 wasi-libc 的兼容层（信号、mman、进程时钟、getpid）
+CPPFLAGS += -D_WASI_EMULATED_SIGNAL -D_WASI_EMULATED_MMAN
+CPPFLAGS += -D_WASI_EMULATED_PROCESS_CLOCKS -D_WASI_EMULATED_GETPID
+# POSIX 常量补丁（wasi-libc 头文件缺失的定义）
+CPPFLAGS += -DSOCK_RDM=4 -DSOCK_SEQPACKET=5 -DSOCK_RAW=3 -DSOCK_DCCP=6
+CPPFLAGS += -DPRIO_PROCESS=0 -DPRIO_PGRP=1 -DPRIO_USER=2
+CPPFLAGS += -DF_GETLK=5 -DF_SETLK=6 -DF_SETLKW=7
+CPPFLAGS += -DF_RDLCK=0 -DF_WRLCK=1 -DF_UNLCK=2
+CPPFLAGS += -DO_NDELAY=0x800 -DF_DUPFD=0
+CPPFLAGS += -D__linux__
+# 禁用 wasi-libc 中与 Linux 不兼容的定义
+CPPFLAGS += -UIP_PKTINFO -UIPV6_PKTINFO
+
+# -Wno- 警告关闭标志不能放在这里（Makefile.flags 会覆盖 CFLAGS）。
+# 这些标志通过 CONFIG_EXTRA_CFLAGS 追加，在 Makefile.flags 之后生效。
 
 # 链接标志：--allow-undefined 容忍未解析符号（wasi 组件模型限制）
 # --error-limit=0 显示所有链接错误

@@ -8,5 +8,4 @@ lib-y:=
 
 INSERT
 
-lib-$(CONFIG_FEATURE_SH_MATH) += math.o
 lib-$(CONFIG_SHELL_WSH) += wsh.o wsh_pipe.o wsh_vars.o wsh_parse.o

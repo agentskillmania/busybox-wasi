@@ -1,7 +1,7 @@
 #
 # Automatically generated make config: don't edit
 # Busybox version: 1.37.0
-# Fri Apr  3 13:50:28 2026
+# Sat Apr  4 12:26:34 2026
 #
 CONFIG_HAVE_DOT_CONFIG=y
 
@@ -50,7 +50,7 @@ CONFIG_NOMMU=y
 # CONFIG_FEATURE_SHARED_BUSYBOX is not set
 CONFIG_CROSS_COMPILER_PREFIX=""
 CONFIG_SYSROOT=""
-CONFIG_EXTRA_CFLAGS="-I/Users/yusangeng/Downloads/busybox-1.37.0-wasm-build/wasi_include -D_WASI_EMULATED_SIGNAL -D_WASI_EMULATED_MMAN -D_WASI_EMULATED_PROCESS_CLOCKS -D_WASI_EMULATED_GETPID -Wno-implicit-function-declaration -Wno-int-conversion -Wno-unknown-attributes -Wno-unknown-pragmas -DSOCK_RDM=4 -DSOCK_SEQPACKET=5 -DSOCK_RAW=3 -DSOCK_DCCP=6 -DPRIO_PROCESS=0 -DPRIO_PGRP=1 -DPRIO_USER=2 -DF_GETLK=5 -DF_SETLK=6 -DF_SETLKW=7 -DF_RDLCK=0 -DF_WRLCK=1 -DF_UNLCK=2 -DO_NDELAY=0x800 -D__linux__ -DF_DUPFD=0 -UIP_PKTINFO -UIPV6_PKTINFO -mllvm -wasm-enable-sjlj -mllvm -wasm-use-legacy-eh=0"
+CONFIG_EXTRA_CFLAGS="-Wno-implicit-function-declaration -Wno-int-conversion -Wno-unknown-attributes -Wno-unknown-pragmas -Wno-unused-parameter -Wno-ignored-optimization-argument -Wno-unused-command-line-argument -Wno-macro-redefined -Wno-declaration-after-statement -Wno-missing-prototypes"
 CONFIG_EXTRA_LDFLAGS=""
 CONFIG_EXTRA_LDLIBS="wasi-emulated-signal wasi-emulated-mman wasi-emulated-process-clocks wasi-emulated-getpid setjmp"
 # CONFIG_USE_PORTABLE_CODE is not set
@@ -972,81 +972,10 @@ CONFIG_SV_DEFAULT_SERVICE_DIR=""
 #
 # Shells
 #
-# CONFIG_SH_IS_ASH is not set
-# CONFIG_SH_IS_HUSH is not set
 CONFIG_SH_IS_NONE=y
-# CONFIG_BASH_IS_ASH is not set
-# CONFIG_BASH_IS_HUSH is not set
 CONFIG_BASH_IS_NONE=y
-CONFIG_SHELL_WSH=y
-CONFIG_WSH=y
-# CONFIG_SHELL_ASH is not set
-# CONFIG_ASH is not set
-# CONFIG_ASH_OPTIMIZE_FOR_SIZE is not set
-# CONFIG_ASH_INTERNAL_GLOB is not set
-# CONFIG_ASH_BASH_COMPAT is not set
-# CONFIG_ASH_BASH_SOURCE_CURDIR is not set
-# CONFIG_ASH_BASH_NOT_FOUND_HOOK is not set
-# CONFIG_ASH_JOB_CONTROL is not set
-# CONFIG_ASH_ALIAS is not set
-# CONFIG_ASH_RANDOM_SUPPORT is not set
-# CONFIG_ASH_EXPAND_PRMT is not set
-# CONFIG_ASH_IDLE_TIMEOUT is not set
-# CONFIG_ASH_MAIL is not set
-# CONFIG_ASH_ECHO is not set
-# CONFIG_ASH_PRINTF is not set
-# CONFIG_ASH_TEST is not set
-# CONFIG_ASH_HELP is not set
-# CONFIG_ASH_GETOPTS is not set
-# CONFIG_ASH_CMDCMD is not set
-# CONFIG_CTTYHACK is not set
-# CONFIG_HUSH is not set
-CONFIG_SHELL_HUSH=y
-CONFIG_HUSH_BASH_COMPAT=y
-# CONFIG_HUSH_BRACE_EXPANSION is not set
-# CONFIG_HUSH_BASH_SOURCE_CURDIR is not set
-# CONFIG_HUSH_LINENO_VAR is not set
-# CONFIG_HUSH_INTERACTIVE is not set
-# CONFIG_HUSH_SAVEHISTORY is not set
-# CONFIG_HUSH_JOB is not set
-# CONFIG_HUSH_TICK is not set
-# CONFIG_HUSH_IF is not set
-# CONFIG_HUSH_LOOPS is not set
-# CONFIG_HUSH_CASE is not set
-# CONFIG_HUSH_FUNCTIONS is not set
-# CONFIG_HUSH_LOCAL is not set
-# CONFIG_HUSH_RANDOM_SUPPORT is not set
-# CONFIG_HUSH_MODE_X is not set
-# CONFIG_HUSH_ECHO is not set
-# CONFIG_HUSH_PRINTF is not set
-# CONFIG_HUSH_TEST is not set
-# CONFIG_HUSH_HELP is not set
-# CONFIG_HUSH_EXPORT is not set
-# CONFIG_HUSH_EXPORT_N is not set
-# CONFIG_HUSH_READONLY is not set
-# CONFIG_HUSH_KILL is not set
-# CONFIG_HUSH_WAIT is not set
-# CONFIG_HUSH_COMMAND is not set
-# CONFIG_HUSH_TRAP is not set
-# CONFIG_HUSH_TYPE is not set
-# CONFIG_HUSH_TIMES is not set
-# CONFIG_HUSH_READ is not set
-# CONFIG_HUSH_SET is not set
-# CONFIG_HUSH_UNSET is not set
-# CONFIG_HUSH_ULIMIT is not set
-# CONFIG_HUSH_UMASK is not set
-# CONFIG_HUSH_GETOPTS is not set
-# CONFIG_HUSH_MEMLEAK is not set
-
-#
-# Options common to all shells
-#
-# CONFIG_FEATURE_SH_MATH is not set
-# CONFIG_FEATURE_SH_MATH_64 is not set
-# CONFIG_FEATURE_SH_MATH_BASE is not set
-# CONFIG_FEATURE_SH_EXTRA_QUIET is not set
 # CONFIG_FEATURE_SH_STANDALONE is not set
 # CONFIG_FEATURE_SH_NOFORK is not set
-# CONFIG_FEATURE_SH_READ_FRAC is not set
-# CONFIG_FEATURE_SH_HISTFILESIZE is not set
-# CONFIG_FEATURE_SH_EMBEDDED_SCRIPTS is not set
+# CONFIG_FEATURE_SH_MATH is not set
+CONFIG_SHELL_WSH=y
+CONFIG_WSH=y

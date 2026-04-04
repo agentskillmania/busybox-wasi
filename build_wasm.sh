@@ -1,9 +1,8 @@
 #!/bin/bash
 # BusyBox 1.37.0 → WebAssembly 构建脚本
 #
-# 通过 BusyBox 原生 Make/Kbuild 体系构建，arch/wasm32/Makefile 提供 WASM 工具链配置。
+# 一行命令完成从配置到编译到验证的全流程。
 # 用法: ./build_wasm.sh
-#   或: make ARCH=wasm32 WASI_SDK=$HOME/wasi-sdk SKIP_STRIP=y -j$(nproc)
 
 set -e
 
@@ -12,9 +11,16 @@ WASMTIME="${WASMTIME:-$HOME/bin/wasmtime}"
 PROJ_DIR="$(cd "$(dirname "$0")" && pwd)"
 JOBS="$(sysctl -n hw.ncpu 2>/dev/null || nproc)"
 
-echo "=== 编译 busybox 1.37.0 → WASM (via Make/Kbuild) ==="
+echo "=== 编译 busybox 1.37.0 → WASM ==="
 
+# 从 defconfig 生成 .config
+echo "--- 从 configs/wasm_defconfig 生成 .config ---"
+make -C "$PROJ_DIR" ARCH=wasm32 WASI_SDK="$WASI_SDK" wasm_defconfig
+
+# 清理
 make -C "$PROJ_DIR" ARCH=wasm32 WASI_SDK="$WASI_SDK" clean
+
+# 编译
 make -C "$PROJ_DIR" ARCH=wasm32 WASI_SDK="$WASI_SDK" SKIP_STRIP=y -j"$JOBS"
 
 # 重命名为 .wasm
