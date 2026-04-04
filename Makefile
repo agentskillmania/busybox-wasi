@@ -525,7 +525,7 @@ endif
 # command line.
 # This allow a user to issue only 'make' to build a kernel including modules
 # Defaults busybox but it is usually overridden in the arch makefile
-all: busybox doc
+all: busybox
 
 # arch Makefile may override CC so keep this after arch Makefile is included
 #bbox# NOSTDINC_FLAGS += -nostdinc -isystem $(shell $(CC) -print-file-name=include)
@@ -998,12 +998,6 @@ clean: archclean $(clean-dirs)
 		\( -name '*.[oas]' -o -name '*.ko' -o -name '.*.cmd' \
 		-o -name '.*.d' -o -name '.*.tmp' -o -name '*.mod.c' \) \
 		-type f -print | xargs rm -f
-
-PHONY += doc-clean
-doc-clean: rm-files := docs/busybox.pod \
-		  docs/BusyBox.html docs/busybox.1 docs/BusyBox.txt
-doc-clean:
-	$(call cmd,rmfiles)
 
 # mrproper - Delete all generated files, including .config
 #
