@@ -17,7 +17,7 @@ NM    = $(WASI_SDK)/bin/llvm-nm
 STRIP = true
 
 # 头文件和兼容性补丁
-CPPFLAGS += -I$(srctree)/wasi_include -include $(srctree)/wasi_compat.h
+CPPFLAGS += -I$(srctree)/wasi_include -include $(srctree)/wasi/wasi_compat.h
 
 # SjLj 异常处理（wasi-preview2 需要此选项支持 setjmp/longjmp）
 CPPFLAGS += -mllvm -wasm-enable-sjlj -mllvm -wasm-use-legacy-eh=0
@@ -39,8 +39,8 @@ CPPFLAGS += -UIP_PKTINFO -UIPV6_PKTINFO
 # -Wno- 警告关闭标志不能放在这里（Makefile.flags 会覆盖 CFLAGS）。
 # 这些标志通过 CONFIG_EXTRA_CFLAGS 追加，在 Makefile.flags 之后生效。
 
-# 链接标志：--allow-undefined 容忍未解析符号（wasi 组件模型限制）
+# 链接标志
 # --error-limit=0 显示所有链接错误
-LDFLAGS += -Wl,--allow-undefined -Wl,--error-limit=0
+LDFLAGS += -Wl,--error-limit=0
 
 endif # WASI_SDK
