@@ -29,8 +29,8 @@ like "$_BB_STDOUT" "hello world" "strings -n 10 提取 hello world（长度 11�
 bb_run strings "$_TEST_TMPDIR/nonexistent.bin"
 cmp_ok "$_BB_EXIT" "!=" "0" "strings 不存在的文件返回非零"
 
-# 无参数应报错
+# 无参数从 stdin 读取，返回 0 是标准行为
 bb_run strings
-cmp_ok "$_BB_EXIT" "!=" "0" "strings 无参数返回非零"
+is "$_BB_EXIT" "0" "strings 无参数从 stdin 读取不崩溃"
 
 done_testing

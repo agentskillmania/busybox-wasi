@@ -2,10 +2,11 @@
 source "$(dirname "$0")/../helper.sh"
 plan 8
 
-# dpkg --help 应该能正常退出或输出帮助信息
-bb_run dpkg --help
+# dpkg --help 输出到 stderr，需要 capture
+bb_run_capture dpkg --help
 is "$_BB_EXIT" "0" "dpkg --help 退出码为 0"
-like "$_BB_STDOUT" "dpkg" "dpkg --help 输出包含 dpkg"
+_dpkg_help="${_BB_STDOUT}${_BB_STDERR}"
+like "$_dpkg_help" "dpkg" "dpkg --help 输出包含 dpkg"
 
 # dpkg --version
 bb_run dpkg --version

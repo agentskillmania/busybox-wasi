@@ -35,9 +35,9 @@ is "$_BB_STDOUT" "a b" "unexpand 不足制表宽度的空格不变"
 bb_run_stdin "a  b  c" unexpand -a -t 2
 like "$_BB_STDOUT" $'\t' "unexpand -a -t 2 转换空格"
 
-# ========== 行首空格转换 ==========
-bb_run_stdin "    hello" unexpand
-like "$_BB_STDOUT" $'\thello' "unexpand 行首空格转换"
+# ========== 行首空格转换（8 个空格 = 1 个 tab）==========
+bb_run_stdin "        hello" unexpand
+like "$_BB_STDOUT" $'\thello' "unexpand 行首 8 空格转为 tab"
 
 # ========== 单空格不变 ==========
 bb_run_stdin "a b c" unexpand

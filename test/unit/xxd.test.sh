@@ -41,13 +41,13 @@ bb_run_stdin "abc" xxd
 like "$_BB_STDOUT" "6162" "xxd 输出包含 ab 的十六进制 6162"
 like "$_BB_STDOUT" "63" "xxd 输出包含 c 的十六进制 63"
 
-# ========== -c 16 默认列数 ==========
+# ========== -c 16 默认列数（BusyBox 2 字节一组）==========
 bb_run_stdin "0123456789abcdef" xxd
-like "$_BB_STDOUT" "30 31 32" "xxd 默认列数输出"
+like "$_BB_STDOUT" "3031 3233" "xxd 默认列数输出"
 
-# ========== -l 4 限制 4 字节 ==========
+# ========== -l 4 限制 4 字节（BusyBox 2 字节一组）==========
 bb_run_stdin "ABCDEFGH" xxd -l 4
-like "$_BB_STDOUT" "41 42 43 44" "xxd -l 4 只输出前 4 字节"
+like "$_BB_STDOUT" "4142 4344" "xxd -l 4 只输出前 4 字节"
 
 # ========== 地址偏移格式 ==========
 bb_run_stdin "test" xxd

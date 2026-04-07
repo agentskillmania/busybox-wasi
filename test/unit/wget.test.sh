@@ -53,9 +53,10 @@ cmp_ok "$_BB_EXIT" "!=" "0" "wget 连接被拒绝返回非零"
 bb_run_net wget
 cmp_ok "$_BB_EXIT" "!=" "0" "wget 无参数返回非零"
 
-# wget --help
-bb_run_net wget --help
+# wget --help（输出到 stderr）
+bb_run_capture wget --help
 is "$_BB_EXIT" "0" "wget --help 成功"
-like "$_BB_STDOUT" "wget" "wget --help 输出包含 wget"
+_wget_help="${_BB_STDOUT}${_BB_STDERR}"
+like "$_wget_help" "wget" "wget --help 输出包含 wget"
 
 done_testing

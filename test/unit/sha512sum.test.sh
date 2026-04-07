@@ -21,12 +21,12 @@ bb_run sha512sum "$file"
 like "$_BB_STDOUT" "^[0-9a-f]{128}  " "sha512sum 输出格式正确（128位十六进制 + 两空格）"
 
 # -c 校验模式：正确校验和
-cksum_file=$(mkfile "sha512.check" "${expected}  test.txt")
+cksum_file=$(mkfile "sha512.check" "${expected}  ${file}")
 bb_run sha512sum -c "$cksum_file"
 like "$_BB_STDOUT" "OK" "sha512sum -c 校验正确的哈希"
 
 # -c 校验模式：错误校验和
-bad_file=$(mkfile "sha512bad.check" "$(printf '%0128s' | tr ' ' '0')  test.txt")
+bad_file=$(mkfile "sha512bad.check" "$(printf '%0128s' | tr ' ' '0')  ${file}")
 bb_run sha512sum -c "$bad_file"
 cmp_ok "$_BB_EXIT" "!=" "0" "sha512sum -c 错误哈希返回非零"
 

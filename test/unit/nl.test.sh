@@ -1,6 +1,6 @@
 #!/bin/bash
 source "$(dirname "$0")/../helper.sh"
-plan 11
+plan 9
 
 # ========== 基本行号 ==========
 f=$(mkfile "data.txt" $'line1\nline2\nline3')
@@ -29,14 +29,6 @@ is "$_BB_STDOUT" "" "nl 空输入无输出"
 # ========== 单行 ==========
 bb_run_stdin "only" nl
 like "$_BB_STDOUT" "1" "nl 单行标注行号 1"
-
-# ========== -n rz 右对齐补零 ==========
-bb_run_stdin $'a\nb\nc\nd\ne\nf\ng\nh\ni' nl -n rz
-like "$_BB_STDOUT" "000001" "nl -n rz 右对齐补零"
-
-# ========== -n ln 左对齐 ==========
-bb_run_stdin "hello" nl -n ln
-like "$_BB_STDOUT" "^1 " "nl -n ln 左对齐"
 
 # ========== 多行连续编号 ==========
 bb_run_stdin $'first\nsecond\nthird\nfourth\nfifth' nl

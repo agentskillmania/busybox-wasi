@@ -33,8 +33,8 @@ is "$_BB_EXIT" "0" "hexdump 通过 stdin 不崩溃"
 bb_run hexdump "$_TEST_TMPDIR/nonexistent.bin"
 cmp_ok "$_BB_EXIT" "!=" "0" "hexdump 不存在的文件返回非零"
 
-# 无参数应报错
+# 无参数从 stdin 读取，返回 0（标准行为）
 bb_run hexdump
-cmp_ok "$_BB_EXIT" "!=" "0" "hexdump 无参数返回非零"
+is "$_BB_EXIT" "0" "hexdump 无参数读 stdin 不崩溃"
 
 done_testing

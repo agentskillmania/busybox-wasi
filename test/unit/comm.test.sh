@@ -38,7 +38,8 @@ is "$_BB_STDOUT" "date" "comm -13 只显示只在文件2中的行"
 
 # ========== 相同文件 ==========
 bb_run comm "$f1" "$f1"
-unlike "$_BB_STDOUT" "^[^\t]" "comm 相同文件第一列为空"
+tab=$'\t'
+unlike "$_BB_STDOUT" "^[^${tab}]" "comm 相同文件第一列为空"
 like "$_BB_STDOUT" "apple" "comm 相同文件包含所有共有行"
 
 # ========== 空文件比较 ==========

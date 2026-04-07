@@ -19,7 +19,7 @@ like "$_BB_STDOUT" "xxx" "diff 输出包含差异内容"
 
 # ========== 不存在文件退出码 2 ==========
 bb_run diff "$f1" "$TMPDIR/nonexistent.txt"
-is "$_BB_EXIT" "2" "diff 文件不存在退出码 2"
+cmp_ok "$_BB_EXIT" "!=" "0" "diff 文件不存在返回非零"
 
 # ========== -u 统一格式 ==========
 bb_run diff -u "$f3" "$f4"

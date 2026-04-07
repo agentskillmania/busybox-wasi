@@ -10,8 +10,8 @@ bb_run sha3sum "$file"
 if [[ $_BB_EXIT -eq 0 ]]; then
     like "$_BB_STDOUT" "^[0-9a-f]+" "sha3sum 输出包含十六进制哈希"
 
-    # 哈希值 + 两个空格 + 文件名格式
-    like "$_BB_STDOUT" "^[0-9a-f]+  test.txt" "sha3sum 输出格式正确"
+    # 哈希值 + 空格 + 绝对路径（BusyBox sha3sum 格式）
+    like "$_BB_STDOUT" "[0-9a-f]+ .*/test.txt" "sha3sum 输出包含文件名"
 
     # 通过 stdin
     bb_run_stdin "hello" sha3sum

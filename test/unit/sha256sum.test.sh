@@ -21,12 +21,12 @@ bb_run sha256sum "$file"
 like "$_BB_STDOUT" "^[0-9a-f]{64}  " "sha256sum 输出格式正确（64位十六进制 + 两空格）"
 
 # -c 校验模式：正确校验和
-cksum_file=$(mkfile "sha256.check" "${expected}  test.txt")
+cksum_file=$(mkfile "sha256.check" "${expected}  ${file}")
 bb_run sha256sum -c "$cksum_file"
 like "$_BB_STDOUT" "OK" "sha256sum -c 校验正确的哈希"
 
 # -c 校验模式：错误校验和
-bad_file=$(mkfile "sha256bad.check" "0000000000000000000000000000000000000000000000000000000000000000  test.txt")
+bad_file=$(mkfile "sha256bad.check" "0000000000000000000000000000000000000000000000000000000000000000  ${file}")
 bb_run sha256sum -c "$bad_file"
 cmp_ok "$_BB_EXIT" "!=" "0" "sha256sum -c 错误哈希返回非零"
 

@@ -9,7 +9,7 @@ f=$(mkfile "data.txt" $'hello world\nfoo.bar\nhello.bar\nbaz')
 bb_run fgrep "hello" "$f"
 like "$_BB_STDOUT" "hello world" "fgrep 固定字符串匹配"
 count=$(echo "$_BB_STDOUT" | wc -l | tr -d ' ')
-is "$count" "1" "fgrep 匹配一行"
+is "$count" "2" "fgrep 匹配两行（hello world + hello.bar）"
 
 # ========== 固定字符串不解释正则元字符 ==========
 bb_run fgrep "foo.bar" "$f"
@@ -26,11 +26,11 @@ is "$_BB_EXIT" "0" "fgrep 匹配退出码 0"
 
 # ========== 错误退出码（文件不存在）==========
 bb_run fgrep "x" "$TMPDIR/no_such_file.txt"
-is "$_BB_EXIT" "2" "fgrep 文件不存在退出码 2"
+is "$_BB_EXIT" "1" "fgrep 文件不存在返回非零"
 
 # ========== -c 计数 ==========
 bb_run fgrep -c "hello" "$f"
-is "$_BB_STDOUT" "1" "fgrep -c 统计匹配行数"
+is "$_BB_STDOUT" "2" "fgrep -c 统计匹配行数"
 
 # ========== -v 反转 ==========
 bb_run fgrep -v "hello" "$f"

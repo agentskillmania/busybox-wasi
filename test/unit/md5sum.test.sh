@@ -20,13 +20,13 @@ like "$_BB_STDOUT" "${expected}" "md5sum 通过 stdin 计算哈希"
 bb_run md5sum "$file"
 like "$_BB_STDOUT" "^[0-9a-f]{32}  " "md5sum 输出格式正确（32位十六进制 + 两空格）"
 
-# -c 校验模式：正确校验和
-cksum_file=$(mkfile "md5.check" "${expected}  test.txt")
+# -c 校验模式：正确校验和（用绝对路径，WASI CWD 是 /）
+cksum_file=$(mkfile "md5.check" "${expected}  ${file}")
 bb_run md5sum -c "$cksum_file"
 like "$_BB_STDOUT" "OK" "md5sum -c 校验正确的哈希"
 
 # -c 校验模式：错误校验和
-bad_file=$(mkfile "md5bad.check" "00000000000000000000000000000000  test.txt")
+bad_file=$(mkfile "md5bad.check" "00000000000000000000000000000000  ${file}")
 bb_run md5sum -c "$bad_file"
 cmp_ok "$_BB_EXIT" "!=" "0" "md5sum -c 错误哈希返回非零"
 

@@ -8,7 +8,8 @@ is "$_BB_STDOUT" "42" "printf %%d 输出整数"
 
 # 带换行的字符串
 bb_run printf '%s\n' hello
-is "$_BB_STDOUT" $'hello\n' "printf %%s\\n 带换行"
+# bash $() 剥离尾部换行，实际得到 "hello"
+is "$_BB_STDOUT" "hello" "printf %%s\\n 带换行"
 
 # 零填充
 bb_run printf '%05d' 3

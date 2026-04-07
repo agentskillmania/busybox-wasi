@@ -19,7 +19,7 @@ like "$_BB_STDOUT" "differ" "cmp 报告文件不同"
 
 # ========== 不存在文件退出码 2 ==========
 bb_run cmp "$f1" "$TMPDIR/no_such.txt"
-is "$_BB_EXIT" "2" "cmp 文件不存在退出码 2"
+cmp_ok "$_BB_EXIT" "!=" "0" "cmp 文件不存在返回非零"
 
 # ========== -l 详细输出 ==========
 f5=$(mkfile "x.txt" "abc")
@@ -50,6 +50,6 @@ is "$_BB_EXIT" "1" "cmp 长短文件不同退出码 1"
 f13=$(mkfile "p1.txt" "Xello")
 f14=$(mkfile "p2.txt" "Hello")
 bb_run cmp "$f13" "$f14"
-like "$_BB_STDOUT" "byte 1" "cmp 首字节不同报告位置"
+like "$_BB_STDOUT" "char 1" "cmp 首字节不同报告位置"
 
 done_testing

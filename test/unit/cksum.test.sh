@@ -30,7 +30,7 @@ like "$_BB_STDOUT" "^[0-9]+ [0-9]+" "cksum 通过 stdin 计算"
 
 # 输出格式: CRC 字节数 文件名
 bb_run cksum "$file"
-like "$_BB_STDOUT" "^[0-9]+ [0-9]+ test.txt" "cksum 输出包含文件名"
+like "$_BB_STDOUT" "[0-9]+ [0-9]+ .*/test.txt$" "cksum 输出包含文件名"
 
 # 空文件
 empty=$(mkfile "empty.txt" "")

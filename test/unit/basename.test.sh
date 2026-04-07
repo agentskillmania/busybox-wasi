@@ -30,8 +30,8 @@ is "$_BB_STDOUT" $'b\nd' "basename -a 多路径"
 bb_run basename -a -s .txt /a/b.txt /c/d.txt
 is "$_BB_STDOUT" $'b\nd' "basename -a -s 多文件去后缀"
 
-# 空路径（应报错或返回空）
+# POSIX 规定 basename "" 返回空字符串且 exit 0，不报错
 bb_run basename ""
-cmp_ok "$_BB_EXIT" "!=" "0" "basename 空路径报错"
+is "$_BB_STDOUT" "" "basename 空路径返回空字符串"
 
 done_testing

@@ -17,7 +17,7 @@ is "$_BB_STDOUT" "hi" "fold 宽度超过行长度不变"
 # ========== -s 在空格处断行 ==========
 bb_run_stdin "hello world foo bar" fold -w 10 -s
 count=$(echo "$_BB_STDOUT" | wc -l | tr -d ' ')
-is "$count" "2" "fold -s 在空格处断行"
+is "$count" "3" "fold -s 在空格处断行"
 
 # ========== 从文件读取 ==========
 f=$(mkfile "data.txt" "abcdefghij")
