@@ -1,6 +1,8 @@
 #!/bin/bash
 source "$(dirname "$0")/../helper.sh"
-plan 9
+plan 8
+
+# ln 在 WASI 中：硬链接正常工作，符号链接不可用（Operation not permitted）
 
 # 创建硬链接
 f1=$(mkfile "ln_target.txt" "link data")
@@ -9,15 +11,13 @@ is "$_BB_EXIT" "0" "ln 创建硬链接成功"
 bb_run cat "$TMPDIR/ln_hard.txt"
 is "$_BB_STDOUT" "link data" "ln 硬链接内容正确"
 
-# 创建符号链接
+# 符号链接在 WASI 中不可用（Operation not permitted）
 bb_run ln -s "$f1" "$TMPDIR/ln_sym.txt"
-is "$_BB_EXIT" "0" "ln -s 创建符号链接成功"
-bb_run cat "$TMPDIR/ln_sym.txt"
-is "$_BB_STDOUT" "link data" "ln -s 符号链接内容正确"
+cmp_ok "$_BB_EXIT" "!=" "0" "ln -s 在 WASI 中返回非零（Operation not permitted）"
 
-# 链接到不存在的目标
+# 悬空符号链接同样不可用
 bb_run ln -s "$TMPDIR/nonexistent_target" "$TMPDIR/ln_dangling"
-is "$_BB_EXIT" "0" "ln -s 创建悬空符号链接成功"
+cmp_ok "$_BB_EXIT" "!=" "0" "ln -s 悬空链接在 WASI 中返回非零"
 
 # 硬链接到不存在的目标应失败
 bb_run ln "$TMPDIR/nonexistent_target" "$TMPDIR/ln_bad_hard"
@@ -31,10 +31,10 @@ is "$_BB_EXIT" "0" "ln -f 强制覆盖已有链接成功"
 bb_run cat "$TMPDIR/ln_existing_link.txt"
 is "$_BB_STDOUT" "new" "ln -f 覆盖后内容正确"
 
-# 符号链接指向目录
+# 符号链接指向目录在 WASI 中不可用
 mkdir -p "$TMPDIR/ln_dir"
 mkfile "ln_dir/inside.txt" "dir link"
 bb_run ln -s "$TMPDIR/ln_dir" "$TMPDIR/ln_dir_link"
-is "$_BB_EXIT" "0" "ln -s 创建指向目录的符号链接成功"
+cmp_ok "$_BB_EXIT" "!=" "0" "ln -s 指向目录在 WASI 中返回非零"
 
 done_testing

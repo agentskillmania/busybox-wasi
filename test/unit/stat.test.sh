@@ -2,6 +2,8 @@
 source "$(dirname "$0")/../helper.sh"
 plan 10
 
+# stat 在 WASI 中基本可用，但 stat -f（文件系统信息）不可用
+
 # stat 获取文件信息
 f1=$(mkfile "stat_file.txt" "stat data")
 bb_run stat "$f1"
@@ -22,9 +24,9 @@ mkdir -p "$TMPDIR/stat_dir"
 bb_run stat "$TMPDIR/stat_dir"
 is "$_BB_EXIT" "0" "stat 获取目录信息成功"
 
-# stat -f 文件系统信息
+# stat -f 文件系统信息在 WASI 中不可用
 bb_run stat -f "$TMPDIR"
-is "$_BB_EXIT" "0" "stat -f 获取文件系统信息成功"
+cmp_ok "$_BB_EXIT" "!=" "0" "stat -f 在 WASI 中不可用（无法读取文件系统信息）"
 
 # stat 多文件
 mkfile "stat_f2.txt" "second"

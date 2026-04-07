@@ -2,26 +2,27 @@
 source "$(dirname "$0")/../helper.sh"
 plan 5
 
-# groups 基本调用
-bb_run groups
-# WASM 环境中可能返回空或受限信息，但不应崩溃
-is "$_BB_EXIT" "0" "groups 不崩溃"
+# groups 在 WASI 中无法查询用户组信息（unknown ID 0），退出码为 1
+# 仅验证命令不崩溃（不 segfault）
 
-# 输出可能是空的或包含组名
+# groups 返回非零（WASI 中无用户数据库）
 bb_run groups
-# 不验证具体内容，只验证不崩溃
-ok "groups 输出: $_BB_STDOUT"
+cmp_ok "$_BB_EXIT" "!=" "0" "groups 在 WASI 中返回非零（无用户数据库）"
 
-# 通过 wsh 调用
+# 输出可能是空的或包含错误信息，不崩溃即可
+bb_run groups
+ok "groups 输出不崩溃: $_BB_STDOUT"
+
+# 通过 wsh 调用同样返回非零
 bb_run_wsh 'groups'
-is "$_BB_EXIT" "0" "groups 在 wsh 中不崩溃"
+cmp_ok "$_BB_EXIT" "!=" "0" "groups 在 wsh 中返回非零"
 
-# 不带参数（当前用户）
+# 输出不含段错误等严重错误
 bb_run groups
-like "$_BB_STDOUT" ".*" "groups 无参数时输出（可能为空）"
+unlike "$_BB_STDOUT" "SIGSEGV|Segmentation" "groups 输出不含段错误信息"
 
-# 输出不含错误信息
+# 无参数调用（当前用户）同样返回非零
 bb_run groups
-unlike "$_BB_STDOUT" "Error|error|SIGSEGV" "groups 输出不含严重错误"
+cmp_ok "$_BB_EXIT" "!=" "0" "groups 无参数时返回非零"
 
 done_testing

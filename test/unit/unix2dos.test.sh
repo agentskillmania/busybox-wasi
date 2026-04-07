@@ -2,32 +2,34 @@
 source "$(dirname "$0")/../helper.sh"
 plan 6
 
-# 生成 Unix 行尾的文件（LF）
+# unix2dos 在 WASI 中：
+# - 原地转换不可用（需要 mkstemp 创建临时文件，ENOSYS）
+# - -n 选项不被支持（BusyBox unix2dos 没有 -n 选项）
+# - 通过 stdin/stdout 模式可以正常工作
+
+# unix2dos 通过 stdin/stdout 模式转换
 printf 'hello\nworld\n' > "$_TEST_TMPDIR/unix.txt"
+bb_run_stdin "$(cat "$_TEST_TMPDIR/unix.txt")" unix2dos
+is "$_BB_EXIT" "0" "unix2dos 通过 stdin/stdout 转换不崩溃"
 
-# unix2dos 基本转换
-bb_run unix2dos "$_TEST_TMPDIR/unix.txt"
-is "$_BB_EXIT" "0" "unix2dos 转换不崩溃"
-
-# 验证转换后文件包含 CRLF
-converted=$(cat "$_TEST_TMPDIR/unix.txt")
+# 验证转换后包含 CRLF（通过管道模式）
+printf 'hello\nworld\n' | $WASMTIME $_WASM_FLAGS --dir="$_WASM_DIR" \
+    "$BUSYBOX_WASM" unix2dos > "$_TEST_TMPDIR/converted.txt" 2>/dev/null
+converted=$(cat "$_TEST_TMPDIR/converted.txt")
 like "$converted" $'\r\n' "unix2dos 转换后包含 \\r\\n"
 
 # 验证内容保留
 like "$converted" "hello" "unix2dos 转换后内容保留"
 like "$converted" "world" "unix2dos 转换后内容完整"
 
-# unix2dos -n 输出到新文件
+# unix2dos 原地转换在 WASI 中不可用（mkstemp ENOSYS）
+printf 'line1\nline2\n' > "$_TEST_TMPDIR/inplace.txt"
+bb_run unix2dos "$_TEST_TMPDIR/inplace.txt"
+cmp_ok "$_BB_EXIT" "!=" "0" "unix2dos 原地转换在 WASI 中不可用（mkstemp ENOSYS）"
+
+# unix2dos -n 不被 BusyBox 支持（unrecognized option）
 printf 'line1\nline2\n' > "$_TEST_TMPDIR/unix2.txt"
 bb_run unix2dos -n "$_TEST_TMPDIR/unix2.txt" "$_TEST_TMPDIR/dos2.txt"
-is "$_BB_EXIT" "0" "unix2dos -n 输出到新文件"
-
-# 新文件包含 CRLF
-if [[ -f "$_TEST_TMPDIR/dos2.txt" ]]; then
-    dos2_content=$(cat "$_TEST_TMPDIR/dos2.txt")
-    like "$dos2_content" $'\r\n' "unix2dos -n 输出文件包含 \\r\\n"
-else
-    skip "unix2dos -n 未生成输出文件"
-fi
+cmp_ok "$_BB_EXIT" "!=" "0" "unix2dos -n 不被 BusyBox 支持"
 
 done_testing

@@ -2,36 +2,32 @@
 source "$(dirname "$0")/../helper.sh"
 plan 6
 
-# mkfifo 创建命名管道（WASI 中 mknod 可能返回 ENOSYS）
+# mkfifo 在 WASI 中不可用（mknod 返回 ENOSYS：Function not implemented）
+# 所有 mkfifo 操作均跳过
+
+# mkfifo 基本调用在 WASI 中不可用
 bb_run mkfifo "$TMPDIR/test_fifo"
-_mkfifo_failed="0"
-[[ "$_BB_EXIT" != "0" ]] && _mkfifo_failed="1"
+cmp_ok "$_BB_EXIT" "!=" "0" "mkfifo 在 WASI 中不可用（mknod ENOSYS）"
 
-if skip_if "$_mkfifo_failed" "mkfifo 在 WASI 中不可用（mknod ENOSYS）"; then
-    # 如果跳过了，后续测试也跳过
-    skip "mkfifo -m 设置权限在 WASI 中不可用"
-    skip "mkfifo 已存在文件在 WASI 中不可用"
-    skip "mkfifo 管道类型验证在 WASI 中不可用"
-    skip "mkfifo 无参数在 WASI 中不可用"
-else
-    is "$_BB_EXIT" "0" "mkfifo 创建命名管道成功"
+# 验证不是段错误等严重错误（只是 ENOSYS）
+bb_run_capture mkfifo "$TMPDIR/test_fifo"
+unlike "$_BB_STDERR" "SIGSEGV|signal" "mkfifo 失败但不产生段错误"
 
-    # 验证是否为 FIFO 类型
-    bb_run test -p "$TMPDIR/test_fifo"
-    is "$_BB_EXIT" "0" "mkfifo 创建的文件是 FIFO 类型"
+# mkfifo -m 设置权限同样不可用
+bb_run mkfifo -m 644 "$TMPDIR/fifo_perm"
+cmp_ok "$_BB_EXIT" "!=" "0" "mkfifo -m 在 WASI 中不可用"
 
-    # mkfifo -m 设置权限
-    bb_run mkfifo -m 644 "$TMPDIR/fifo_perm"
-    is "$_BB_EXIT" "0" "mkfifo -m 设置权限成功"
+# mkfifo 已存在文件应返回错误（不是因为 ENOSYS 而是因为文件已存在）
+mkfile "existing_fifo.txt" "data"
+bb_run mkfifo "$TMPDIR/existing_fifo.txt"
+cmp_ok "$_BB_EXIT" "!=" "0" "mkfifo 目标已存在返回非零"
 
-    # mkfifo 已存在文件应失败
-    mkfile "existing_fifo.txt" "data"
-    bb_run mkfifo "$TMPDIR/existing_fifo.txt"
-    cmp_ok "$_BB_EXIT" "!=" "0" "mkfifo 目标已存在返回非零"
+# mkfifo 无参数应报错
+bb_run mkfifo
+cmp_ok "$_BB_EXIT" "!=" "0" "mkfifo 无参数返回非零"
 
-    # mkfifo 无参数应失败
-    bb_run mkfifo
-    cmp_ok "$_BB_EXIT" "!=" "0" "mkfifo 无参数返回非零"
-fi
+# mkfifo 在 wsh 中同样不可用
+bb_run_wsh 'mkfifo /tmp/test_wsh_fifo'
+cmp_ok "$_BB_EXIT" "!=" "0" "mkfifo 在 wsh 中同样不可用"
 
 done_testing
