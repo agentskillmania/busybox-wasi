@@ -80,10 +80,9 @@ int uniq_main(int argc UNUSED_PARAM, char **argv)
 			if (argv[2])
 				bb_show_usage();
 			if (output[0] != '-' || output[1]) {
-				// Won't work with "uniq - FILE" and closed stdin:
-				//close(STDOUT_FILENO);
-				//xopen(output, O_WRONLY | O_CREAT | O_TRUNC);
-				xmove_fd(xopen(output, O_WRONLY | O_CREAT | O_TRUNC), STDOUT_FILENO);
+				/* WASI: close stdout 然后 open，fd 应分配到 1 */
+				close(STDOUT_FILENO);
+				xopen(output, O_WRONLY | O_CREAT | O_TRUNC); /* fd will be 1 */
 			}
 		}
 	}

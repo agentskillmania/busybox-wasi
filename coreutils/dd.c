@@ -107,10 +107,11 @@
 /* This is a NOEXEC applet. Be very careful! */
 
 
-enum {
-	ifd = STDIN_FILENO,
-	ofd = STDOUT_FILENO,
-};
+/* WASI: ifd/ofd 改为变量，避免使用 dup2/xmove_fd。
+ * 原代码用 enum 常量 + xmove_fd 将打开的文件 renumber 到 0/1，
+ * WASI 不支持 dup2，改为直接保存 open 返回的 fd。 */
+static int ifd = STDIN_FILENO;
+static int ofd = STDOUT_FILENO;
 
 struct globals {
 	off_t out_full, out_part, in_full, in_part;
@@ -515,7 +516,7 @@ int dd_main(int argc UNUSED_PARAM, char **argv)
 # endif
 		}
 #endif
-		xmove_fd(xopen(infile, iflag), ifd);
+		ifd = xopen(infile, iflag);
 	} else {
 		infile = bb_msg_standard_input;
 	}
@@ -535,7 +536,7 @@ int dd_main(int argc UNUSED_PARAM, char **argv)
 # endif
 		}
 #endif
-		xmove_fd(xopen(outfile, oflag), ofd);
+		ofd = xopen(outfile, oflag);
 
 		if (seek && !(G.flags & FLAG_NOTRUNC)) {
 			size_t blocksz = (G.flags & FLAG_SEEK_BYTES) ? 1 : obs;

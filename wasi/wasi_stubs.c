@@ -24,6 +24,7 @@
 #include <sys/resource.h>
 #include <sys/mman.h>
 #include <errno.h>
+#include <fcntl.h>
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -100,8 +101,37 @@ int WEXITSTATUS(int status) { (void)status; return 0; }
 /* ========== 文件/IO stub ========== */
 
 int pipe(int fd[2]) { (void)fd; errno = ENOSYS; return -1; }
-int dup(int oldfd) { (void)oldfd; errno = ENOSYS; return -1; }
-int dup2(int oldfd, int newfd) { (void)oldfd; (void)newfd; errno = ENOSYS; return -1; }
+
+/* dup/dup2 无法实现。
+ * wasmtime wasip2 不支持 fd_renumber syscall（所有调用返回 EBADF），
+ * 且 WASI 没有复制 fd 的 syscall，因此 dup/dup2 语义无法实现。 */
+
+int dup(int oldfd) {
+	/* wasmtime wasip2 不支持 fd_renumber syscall。
+	 * WASI 的 dup 语义（复制 fd）无法实现，因为没有 copy fd 的 syscall。
+	 * 返回 ENOSYS。
+	 */
+	(void)oldfd;
+	errno = ENOSYS;
+	return -1;
+}
+
+int dup2(int oldfd, int newfd) {
+	if (oldfd == newfd) {
+		return oldfd;
+	}
+	/* wasmtime wasip2 不支持 fd_renumber syscall。
+	 * dup2 无法实现。
+	 * BusyBox 中 dup2 主要用于:
+	 *   - xmove_fd: dup2(from,to)+close(from)，用于"移动" fd
+	 *   - xdup2: 重定向 stdin/stdout/stderr
+	 * split 不依赖 dup2，能正常工作。
+	 * unzip 依赖 xmove_fd 移动 zip fd，因此无法工作。
+	 */
+	(void)oldfd; (void)newfd;
+	errno = ENOSYS;
+	return -1;
+}
 
 int flock(int fd, int operation) { (void)fd; (void)operation; return 0; }
 

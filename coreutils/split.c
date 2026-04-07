@@ -97,6 +97,10 @@ int split_main(int argc UNUSED_PARAM, char **argv)
 	unsigned opt;
 	ssize_t bytes_read, to_write;
 	char *src;
+	/* WASI: 直接使用 fd 变量，避免 dup2 */
+	int in_fd = STDIN_FILENO;
+	int out_fd = STDOUT_FILENO;
+	int out_fd_valid = 0; /* 当前 out_fd 是否有打开的文件 */
 
 	setup_common_bufsiz();
 
@@ -117,11 +121,9 @@ int split_main(int argc UNUSED_PARAM, char **argv)
 
 	argv += optind;
 	if (argv[0]) {
-		int fd;
 		if (argv[1])
 			sfx = argv[1];
-		fd = xopen_stdin(argv[0]);
-		xmove_fd(fd, STDIN_FILENO);
+		in_fd = xopen_stdin(argv[0]);
 	} else {
 		argv[0] = (char *) bb_msg_standard_input;
 	}
@@ -138,7 +140,7 @@ int split_main(int argc UNUSED_PARAM, char **argv)
 	}
 
 	while (1) {
-		bytes_read = safe_read(STDIN_FILENO, read_buffer, READ_BUFFER_SIZE);
+		bytes_read = safe_read(in_fd, read_buffer, READ_BUFFER_SIZE);
 		if (!bytes_read)
 			break;
 		if (bytes_read < 0)
@@ -148,7 +150,10 @@ int split_main(int argc UNUSED_PARAM, char **argv)
 			if (!remaining) {
 				if (!pfx)
 					bb_simple_error_msg_and_die("suffixes exhausted");
-				xmove_fd(xopen(pfx, O_WRONLY | O_CREAT | O_TRUNC), 1);
+				if (out_fd_valid)
+					close(out_fd);
+				out_fd = xopen(pfx, O_WRONLY | O_CREAT | O_TRUNC);
+				out_fd_valid = 1;
 				pfx = next_file(pfx, suffix_len);
 				remaining = cnt;
 			}
@@ -170,10 +175,14 @@ int split_main(int argc UNUSED_PARAM, char **argv)
 				}
 			}
 
-			xwrite(STDOUT_FILENO, src, to_write);
+			xwrite(out_fd, src, to_write);
 			bytes_read -= to_write;
 			src += to_write;
 		} while (bytes_read);
 	}
+	if (out_fd_valid)
+		close(out_fd);
+	if (in_fd != STDIN_FILENO)
+		close(in_fd);
 	return EXIT_SUCCESS;
 }

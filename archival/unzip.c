@@ -210,7 +210,8 @@ struct BUG {
 };
 
 
-enum { zip_fd = 3 };
+/* WASI: 使用较高的 fd 编号避免与 preopen fd（通常是 3-5）冲突 */
+enum { zip_fd = 20 };
 
 
 /* This value means that we failed to find CDF */
