@@ -210,8 +210,8 @@ struct BUG {
 };
 
 
-/* WASI: 使用较高的 fd 编号避免与 preopen fd（通常是 3-5）冲突 */
-enum { zip_fd = 20 };
+/* WASI: zip_fd 改为变量，直接存储 open 返回的 fd，不依赖 dup2 */
+static int zip_fd;
 
 
 /* This value means that we failed to find CDF */
@@ -586,7 +586,8 @@ int unzip_main(int argc, char **argv)
 			break;
 
 		case 't': /* Extract files to /dev/null */
-			xmove_fd(xopen("/dev/null", O_WRONLY), STDOUT_FILENO);
+			/* WASI: close stdout then open /dev/null */
+			close(STDOUT_FILENO); xopen("/dev/null", O_WRONLY);
 			/*fallthrough*/
 
 // NB: -c extract files to stdout/screen (unlike -p, also prints .zip and file names to stdout)
@@ -659,7 +660,7 @@ int unzip_main(int argc, char **argv)
 
 	/* Open input file */
 	if (LONE_DASH(src_fn)) {
-		xdup2(STDIN_FILENO, zip_fd);
+		zip_fd = STDIN_FILENO;
 		/* Cannot use prompt mode since zip data is arriving on STDIN */
 		if (overwrite == O_PROMPT)
 			overwrite = O_NEVER;
@@ -681,7 +682,7 @@ int unzip_main(int argc, char **argv)
 			}
 			strcpy(ext, extn[i - 1]);
 		}
-		xmove_fd(src_fd, zip_fd);
+		zip_fd = src_fd;
 	}
 
 	/* Change dir if necessary */
