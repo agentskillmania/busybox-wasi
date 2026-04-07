@@ -223,6 +223,18 @@ bb_run_stdin() {
         "$BUSYBOX_WASM" "$applet" "$@" 2>"$stderr_dest") && _BB_EXIT=0 || _BB_EXIT=$?
 }
 
+# bb_run_env <applet> [args...] — 带环境变量（传入 HOME/PATH 等）
+# 设置: _BB_EXIT, _BB_STDOUT
+bb_run_env() {
+    local applet="$1"; shift
+    local stderr_dest="/dev/null"
+    [[ "${VERBOSE:-}" == "y" ]] && stderr_dest="/dev/stderr"
+
+    _BB_STDOUT=$($WASMTIME $_WASM_FLAGS --dir="$_WASM_DIR" \
+        --env=HOME=/root --env=PATH=/usr/bin:/bin \
+        "$BUSYBOX_WASM" "$applet" "$@" 2>"$stderr_dest") && _BB_EXIT=0 || _BB_EXIT=$?
+}
+
 # bb_run_net <applet> [args...] — 带网络标志
 # 设置: _BB_EXIT, _BB_STDOUT
 bb_run_net() {
