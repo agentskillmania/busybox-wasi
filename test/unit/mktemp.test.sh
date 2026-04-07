@@ -1,41 +1,32 @@
 #!/bin/bash
 source "$(dirname "$0")/../helper.sh"
-plan 9
+plan 8
 
-# mktemp 在 WASI 中：基本 mktemp（文件）不可用（mkstemp ENOSYS）
-# mktemp -d（目录）可以工作（不调用 mkstemp）
+# mktemp 已实现 mkstemp/mkdtemp，临时文件和目录创建均可用
 
-# mktemp 创建文件不可用（mkstemp ENOSYS）
-bb_run mktemp
-cmp_ok "$_BB_EXIT" "!=" "0" "mktemp 创建文件在 WASI 中不可用（mkstemp ENOSYS）"
-
-# mktemp -d 创建目录可以工作
-bb_run mktemp -d
-is "$_BB_EXIT" "0" "mktemp -d 创建临时目录成功"
-like "$_BB_STDOUT" "tmp" "mktemp -d 输出包含路径"
-
-# mktemp 指定模板（文件）不可用
+# 指定模板创建文件
 bb_run mktemp "$TMPDIR/mktest.XXXXXX"
-cmp_ok "$_BB_EXIT" "!=" "0" "mktemp 指定模板创建文件不可用"
+is "$_BB_EXIT" "0" "mktemp 指定模板创建成功"
+like "$_BB_STDOUT" "mktest" "mktemp 模板名称被使用"
 
-# mktemp -p 指定目录（文件）不可用
-bb_run mktemp -p "$TMPDIR"
-cmp_ok "$_BB_EXIT" "!=" "0" "mktemp -p 指定目录创建文件不可用"
+# -d 创建临时目录
+bb_run mktemp -d "$TMPDIR/mktestdir.XXXXXX"
+is "$_BB_EXIT" "0" "mktemp -d 创建临时目录成功"
+like "$_BB_STDOUT" "mktestdir" "mktemp -d 输出包含目录名"
 
-# mktemp -q 安静模式（文件）不可用
-bb_run mktemp -q
-cmp_ok "$_BB_EXIT" "!=" "0" "mktemp -q 安静模式不可用"
+# 验证创建的文件确实存在
+created=$($WASMTIME -W exceptions=y --dir="$TMPDIR" busybox.wasm mktemp "$TMPDIR/exist.XXXXXX" 2>/dev/null)
+bb_run test -f "$created"
+is "$_BB_EXIT" "0" "mktemp 创建的文件确实存在"
 
-# mktemp -t（文件）不可用
-bb_run mktemp -t myprefix.XXXXXX
-cmp_ok "$_BB_EXIT" "!=" "0" "mktemp -t 创建文件不可用"
+# 验证创建的目录确实存在
+created_dir=$($WASMTIME -W exceptions=y --dir="$TMPDIR" busybox.wasm mktemp -d "$TMPDIR/existdir.XXXXXX" 2>/dev/null)
+bb_run test -d "$created_dir"
+is "$_BB_EXIT" "0" "mktemp -d 创建的目录确实存在"
 
-# mktemp -d -p 指定目录创建目录
-bb_run mktemp -d -p "$TMPDIR"
-is "$_BB_EXIT" "0" "mktemp -d -p 创建临时目录成功"
-
-# mktemp 无参数（文件）不可用，但不崩溃
-bb_run_capture mktemp
-unlike "$_BB_STDERR" "SIGSEGV|signal" "mktemp 失败但不产生段错误"
+# -p 指定目录
+bb_run mktemp -p "$TMPDIR" "prefix.XXXXXX"
+is "$_BB_EXIT" "0" "mktemp -p 指定目录创建成功"
+like "$_BB_STDOUT" "prefix" "mktemp -p 使用了前缀"
 
 done_testing

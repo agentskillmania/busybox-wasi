@@ -135,21 +135,63 @@ int dup2(int oldfd, int newfd) {
 
 int flock(int fd, int operation) { (void)fd; (void)operation; return 0; }
 
+/* ========== mkstemp/mkdtemp/mktemp 实现 ==========
+ * WASI preview2 提供 wasi:random/random（get-random-bytes）和
+ * open-at（O_CREAT|O_EXCL），足以实现安全的临时文件/目录创建。
+ * 使用 arc4random_buf 生成随机后缀（wasi-libc 底层调 wasi:random）。 */
+
+/* 在 template 末尾找到连续的 X 序列，返回起始位置和长度 */
+static char *find_x_suffix(char *template, size_t *x_len) {
+    size_t len = strlen(template);
+    size_t i = len;
+    while (i > 0 && template[i - 1] == 'X') i--;
+    *x_len = len - i;
+    return (char *)(template + i);
+}
+
+/* 用随机字母数字替换 X 后缀 */
+static void fill_random_suffix(char *suffix, size_t len) {
+    static const char chars[] = "abcdefghijklmnopqrstuvwxyz012345";
+    unsigned char buf[64];
+    if (len > sizeof(buf)) len = sizeof(buf);
+    arc4random_buf(buf, len);
+    for (size_t i = 0; i < len; i++)
+        suffix[i] = chars[buf[i] % (sizeof(chars) - 1)];
+}
+
 int mkstemp(char *template) {
-    (void)template;
-    errno = ENOSYS;
+    size_t x_len;
+    char *suffix = find_x_suffix(template, &x_len);
+    if (x_len < 6) { errno = EINVAL; return -1; }
+    for (int attempts = 0; attempts < 100; attempts++) {
+        fill_random_suffix(suffix, x_len);
+        int fd = open(template, O_RDWR | O_CREAT | O_EXCL, 0600);
+        if (fd >= 0) return fd;
+        if (errno != EEXIST) return -1;
+    }
+    errno = EEXIST;
     return -1;
 }
 
 char *mktemp(char *template) {
-    (void)template;
-    return NULL;
+    size_t x_len;
+    char *suffix = find_x_suffix(template, &x_len);
+    if (x_len < 6) { errno = EINVAL; return NULL; }
+    fill_random_suffix(suffix, x_len);
+    return template;
 }
 
-int mkdtemp(char *template) {
-    (void)template;
-    errno = ENOSYS;
-    return -1;
+char *mkdtemp(char *template) {
+    size_t x_len;
+    char *suffix = find_x_suffix(template, &x_len);
+    if (x_len < 6) { errno = EINVAL; return NULL; }
+    for (int attempts = 0; attempts < 100; attempts++) {
+        fill_random_suffix(suffix, x_len);
+        if (mkdir(template, 0700) == 0) return template;
+        if (errno != EEXIST) return NULL;
+    }
+    errno = EEXIST;
+    return NULL;
 }
 
 int mkfifo(const char *pathname, mode_t mode) {

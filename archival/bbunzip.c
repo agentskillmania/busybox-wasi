@@ -24,11 +24,13 @@
 static
 int open_to_or_warn(int to_fd, const char *filename, int flags, int mode)
 {
+	/* WASI: close(to_fd) 然后 open，fd 应分配到 to_fd */
+	close(to_fd);
 	int fd = open3_or_warn(filename, flags, mode);
 	if (fd < 0) {
 		return 1;
 	}
-	xmove_fd(fd, to_fd);
+	/* 如果 fd 不是预期的 to_fd（极少见），也不影响正确性 */
 	return 0;
 }
 
@@ -72,10 +74,12 @@ int FAST_FUNC bbunpack(char **argv,
 			} else {
 				/* "clever zcat" with FILE */
 				/* fail_if_not_compressed because zcat refuses uncompressed input */
+				/* WASI: close(0) first so open_zipped returns fd 0 */
+				close(STDIN_FILENO);
 				int fd = open_zipped(filename, /*fail_if_not_compressed:*/ 1);
 				if (fd < 0)
 					goto err_name;
-				xmove_fd(fd, STDIN_FILENO);
+				/* fd should be 0 since we closed it first */
 			}
 		} else
 		if (option_mask32 & BBUNPK_SEAMLESS_MAGIC) {

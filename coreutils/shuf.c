@@ -198,8 +198,11 @@ int shuf_main(int argc, char **argv)
 
 	shuffle_lines(lines, numlines, outlines);
 
-	if (opts & OPT_o)
-		xmove_fd(xopen(opt_o_str, O_WRONLY|O_CREAT|O_TRUNC), STDOUT_FILENO);
+	if (opts & OPT_o) {
+		/* WASI: close stdout 然后 open，fd 应分配到 1 */
+		close(STDOUT_FILENO);
+		xopen(opt_o_str, O_WRONLY|O_CREAT|O_TRUNC); /* fd will be 1 */
+	}
 
 	eol = '\n';
 	if (opts & OPT_z)
