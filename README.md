@@ -6,7 +6,7 @@
 
 ## What is This
 
-This project ports [BusyBox](https://busybox.net/) — the Swiss Army Knife of Embedded Linux — to WebAssembly. It produces a single `busybox.wasm` binary containing **140 standard Unix utilities** that can run in any WASI-compliant runtime.
+This project ports [BusyBox](https://busybox.net/) — the Swiss Army Knife of Embedded Linux — to WebAssembly. It produces a single `busybox.wasm` binary containing **134 standard Unix utilities** that can run in any WASI-compliant runtime.
 
 This is **not** an official BusyBox project. It is a fork that adds a WASI compatibility layer on top of the BusyBox 1.37.0 source tree.
 
@@ -57,7 +57,7 @@ wasmtime -W exceptions=y --dir=/tmp busybox.wasm ls /tmp
 wasmtime -W exceptions=y --dir=/tmp busybox.wasm wsh -c 'echo hello | tr a-z A-Z'
 ```
 
-## Supported Commands (140)
+## Supported Commands (134)
 
 ### Archival Utilities
 
@@ -102,7 +102,6 @@ wasmtime -W exceptions=y --dir=/tmp busybox.wasm wsh -c 'echo hello | tr a-z A-Z
 | `cut` | Remove sections of lines |
 | `date` | Print/set date |
 | `dd` | Convert and copy files |
-| `df` | Disk free space |
 | `dirname` | Strip filename |
 | `dos2unix` | Convert DOS line endings |
 | `unix2dos` | Convert Unix line endings |
@@ -127,7 +126,6 @@ wasmtime -W exceptions=y --dir=/tmp busybox.wasm wsh -c 'echo hello | tr a-z A-Z
 | `sha3sum` | SHA3 checksum |
 | `sha512sum` | SHA512 checksum |
 | `mkdir` | Create directories |
-| `mkfifo` | Create named pipes |
 | `mktemp` | Create temporary files |
 | `mv` | Move/rename files |
 | `nice` | Set process priority |
@@ -138,7 +136,6 @@ wasmtime -W exceptions=y --dir=/tmp busybox.wasm wsh -c 'echo hello | tr a-z A-Z
 | `printenv` | Print environment |
 | `printf` | Format and print |
 | `pwd` | Print working directory |
-| `readlink` | Print symlink target |
 | `realpath` | Print resolved path |
 | `rm` | Remove files |
 | `rmdir` | Remove directories |
@@ -156,13 +153,11 @@ wasmtime -W exceptions=y --dir=/tmp busybox.wasm wsh -c 'echo hello | tr a-z A-Z
 | `tail` | Output last lines |
 | `tee` | Read from stdin, write to stdout and files |
 | `test` | File type and value tests |
-| `timeout` | Run with time limit |
 | `touch` | Change file timestamps |
 | `tr` | Translate characters |
 | `true` | Return true |
 | `truncate` | Shrink/extend files |
 | `tsort` | Topological sort |
-| `tty` | Print terminal name |
 | `uname` | Print system information |
 | `uniq` | Report repeated lines |
 | `unlink` | Remove single file |
@@ -228,7 +223,6 @@ wasmtime -W exceptions=y --dir=/tmp busybox.wasm wsh -c 'echo hello | tr a-z A-Z
 | `pipe_progress` | Show pipe progress |
 | `run-parts` | Run scripts in directory |
 | `strings` | Print printable strings |
-| `which` | Locate command |
 | `wsh` | WASM shell (custom) |
 
 ### Shell
@@ -305,10 +299,40 @@ This is a WebAssembly port running in a sandboxed environment. Many POSIX featur
 | Users/Groups | Not supported | `getpwuid()`, `getgrnam()` return NULL |
 | Mount/filesystem | Not supported | No `mount()`, `umount()`, `statfs()` returns defaults |
 | Terminals | Limited | `tcgetattr()`/`tcsetattr()` return -1; `vi` works in basic mode |
+| Symlinks | Not supported | wasmtime prohibits symlink creation; `ln -s` returns EPERM |
+| Permissions | Ignored | `chmod`, `fchmod`, `chown` are no-ops in the WASM sandbox |
 
 Commands that **work well**: file operations (cat, cp, mv, rm, ls), text processing (grep, sed, awk, sort), compression (gzip, bzip2, xz), checksums (md5sum, sha256sum), and other single-process utilities.
 
-Commands that **don't work**: anything requiring process management (ps, top, kill), mounting (mount, umount), user management (useradd, passwd), or inter-process pipes.
+### Commands Removed from Build
+
+The following commands have been removed from the build because they require WASI-incompatible APIs that cannot be worked around:
+
+| Command | Reason |
+|---------|--------|
+| `df` | Requires `/proc/mounts` and `statfs()` — WASI has no filesystem statistics |
+| `mkfifo` | Requires `mknod()` — WASI has no concept of device nodes or named pipes |
+| `readlink` | Depends on symlinks — wasmtime prohibits symlink creation |
+| `timeout` | Requires `vfork()` — WASM is single-process |
+| `tty` | WASI has no terminal device concept |
+| `which` | No accessible PATH directories in WASM sandbox |
+
+### Commands with Known Limitations
+
+These commands are included in the build but have partial functionality:
+
+| Command | Limitation |
+|---------|------------|
+| `chmod` | No-op (WASM sandbox has no permission model) |
+| `env` | No environment variables in WASM; `env COMMAND` fails (no exec) |
+| `gunzip` / `bunzip2` / `unlzma` / `unxz` | Work for file decompression; `zcat` with SEAMLESS_MAGIC doesn't work (needs fork+pipe) |
+| `gzip` / `bzip2` / `xz` | Work for file compression |
+| `ln` | Only hard links; `ln -s` returns EPERM (symlinks blocked) |
+| `nohup` | No-op stub for signals; command still runs normally |
+| `nice` | No-op stub; priority setting is meaningless in WASM |
+| `nslookup` | DNS stubs are incomplete; may not work for all query types |
+| `tar` | Non-compressed mode works; compressed mode (tar -z etc.) needs fork+pipe |
+| `unzip -t` | Test mode opens `/dev/null` which doesn't exist in WASI; use `unzip -l` instead |
 
 ## License
 

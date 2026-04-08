@@ -133,6 +133,7 @@ int dup2(int oldfd, int newfd) {
 	return -1;
 }
 
+
 int flock(int fd, int operation) { (void)fd; (void)operation; return 0; }
 
 /* ========== mkstemp/mkdtemp/mktemp 实现 ==========
@@ -365,6 +366,8 @@ int mknodat(int dirfd, const char *path, mode_t mode, dev_t dev) {
 int initgroups(const char *user, gid_t group) {
     (void)user; (void)group; return 0;
 }
+
+/* ========== 文件权限 stub ========== */
 
 /* ========== DNS 解析器 stub ========== */
 /* arpa/nameser.h 声明了 ns_* 函数，但 wasi-libc 不提供实现。

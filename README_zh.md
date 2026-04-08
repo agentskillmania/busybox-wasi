@@ -6,7 +6,7 @@
 
 ## 项目简介
 
-本项目将 [BusyBox](https://busybox.net/) —— 嵌入式 Linux 的瑞士军刀 —— 移植到 WebAssembly 平台。产出单个 `busybox.wasm` 二进制文件，包含 **140 个标准 Unix 工具**，可在任何兼容 WASI 的运行时中运行。
+本项目将 [BusyBox](https://busybox.net/) —— 嵌入式 Linux 的瑞士军刀 —— 移植到 WebAssembly 平台。产出单个 `busybox.wasm` 二进制文件，包含 **134 个标准 Unix 工具**，可在任何兼容 WASI 的运行时中运行。
 
 这不是 BusyBox 官方项目。它是在 BusyBox 1.37.0 源码基础上添加 WASI 兼容层的分支版本。
 
@@ -57,7 +57,7 @@ wasmtime -W exceptions=y --dir=/tmp busybox.wasm ls /tmp
 wasmtime -W exceptions=y --dir=/tmp busybox.wasm wsh -c 'echo hello | tr a-z A-Z'
 ```
 
-## 支持的命令（140 个）
+## 支持的命令（134 个）
 
 ### 归档工具
 
@@ -102,7 +102,6 @@ wasmtime -W exceptions=y --dir=/tmp busybox.wasm wsh -c 'echo hello | tr a-z A-Z
 | `cut` | 去除行中指定部分 |
 | `date` | 打印/设置日期 |
 | `dd` | 转换并复制文件 |
-| `df` | 磁盘剩余空间 |
 | `dirname` | 去除文件名 |
 | `dos2unix` | DOS 换行转 Unix |
 | `unix2dos` | Unix 换行转 DOS |
@@ -127,7 +126,6 @@ wasmtime -W exceptions=y --dir=/tmp busybox.wasm wsh -c 'echo hello | tr a-z A-Z
 | `sha3sum` | SHA3 校验 |
 | `sha512sum` | SHA512 校验 |
 | `mkdir` | 创建目录 |
-| `mkfifo` | 创建命名管道 |
 | `mktemp` | 创建临时文件 |
 | `mv` | 移动/重命名文件 |
 | `nice` | 设置进程优先级 |
@@ -138,7 +136,6 @@ wasmtime -W exceptions=y --dir=/tmp busybox.wasm wsh -c 'echo hello | tr a-z A-Z
 | `printenv` | 打印环境变量 |
 | `printf` | 格式化输出 |
 | `pwd` | 打印工作目录 |
-| `readlink` | 打印符号链接目标 |
 | `realpath` | 打印解析后路径 |
 | `rm` | 删除文件 |
 | `rmdir` | 删除目录 |
@@ -156,13 +153,11 @@ wasmtime -W exceptions=y --dir=/tmp busybox.wasm wsh -c 'echo hello | tr a-z A-Z
 | `tail` | 输出末尾行 |
 | `tee` | 从 stdin 读，写 stdout 和文件 |
 | `test` | 文件类型和值测试 |
-| `timeout` | 带超时运行 |
 | `touch` | 修改文件时间戳 |
 | `tr` | 字符转换 |
 | `true` | 返回 true |
 | `truncate` | 缩减/扩展文件 |
 | `tsort` | 拓扑排序 |
-| `tty` | 打印终端名 |
 | `uname` | 打印系统信息 |
 | `uniq` | 去重行 |
 | `unlink` | 删除单个文件 |
@@ -228,7 +223,6 @@ wasmtime -W exceptions=y --dir=/tmp busybox.wasm wsh -c 'echo hello | tr a-z A-Z
 | `pipe_progress` | 显示管道进度 |
 | `run-parts` | 执行目录中的脚本 |
 | `strings` | 打印可打印字符串 |
-| `which` | 定位命令 |
 | `wsh` | WASM shell（自定义） |
 
 ### Shell
@@ -303,10 +297,42 @@ make ARCH=wasm32 WASI_SDK=$HOME/wasi-sdk menuconfig
 | 用户/组 | 不可用 | `getpwuid()`、`getgrnam()` 返回 NULL |
 | 挂载/文件系统 | 不可用 | 无 `mount()`、`umount()`，`statfs()` 返回默认值 |
 | 终端 | 有限 | `tcgetattr()`/`tcsetattr()` 返回 -1，`vi` 可在基本模式下使用 |
+| 符号链接 | 不可用 | wasmtime 禁止创建符号链接，`ln -s` 返回 EPERM |
+| 文件权限 | 忽略 | `chmod`、`fchmod`、`chown` 在 WASM 沙箱中为空操作 |
 
 **能正常工作的命令**：文件操作（cat、cp、mv、rm、ls）、文本处理（grep、sed、awk、sort）、压缩（gzip、bzip2、xz）、校验和（md5sum、sha256sum）等单进程工具。
 
 **不能工作的命令**：需要进程管理的命令（ps、top、kill）、挂载操作（mount、umount）、用户管理（useradd、passwd）或进程间管道的命令。
+
+### 已从构建中移除的命令
+
+以下命令因依赖 WASI 不兼容的 API（无法绕开）已从构建中移除：
+
+| 命令 | 移除原因 |
+|------|---------|
+| `df` | 依赖 `/proc/mounts` 和 `statfs()` — WASI 无文件系统统计接口 |
+| `mkfifo` | 依赖 `mknod()` — WASI 无设备节点或命名管道概念 |
+| `readlink` | 依赖符号链接 — wasmtime 禁止创建符号链接 |
+| `timeout` | 依赖 `vfork()` — WASM 单进程模型 |
+| `tty` | WASI 无终端设备概念 |
+| `which` | WASM 沙箱中无可访问的 PATH 目录 |
+
+### 有已知限制的命令
+
+以下命令已包含在构建中，但功能部分受限：
+
+| 命令 | 限制 |
+|------|------|
+| `chmod` | 空操作（WASM 沙箱无权限模型） |
+| `env` | WASM 无环境变量；`env COMMAND` 因无法 exec 而失败 |
+| `gunzip` / `bunzip2` / `unlzma` / `unxz` | 文件解压可用；`zcat` 的 SEAMLESS_MAGIC 模式不可用（需 fork+pipe） |
+| `gzip` / `bzip2` / `xz` | 文件压缩可用 |
+| `ln` | 仅支持硬链接；`ln -s` 返回 EPERM（符号链接被禁用） |
+| `nohup` | 信号相关操作为空 stub；命令仍正常执行 |
+| `nice` | 空操作 stub；在 WASM 中进程优先级无意义 |
+| `nslookup` | DNS stub 不完整；部分查询类型可能失败 |
+| `tar` | 非压缩模式可用；压缩模式（tar -z 等）需 fork+pipe |
+| `unzip -t` | 测试模式打开 `/dev/null`，WASI 中不存在；请使用 `unzip -l` 替代 |
 
 ## 许可证
 
