@@ -1,23 +1,25 @@
 #!/bin/bash
 source "$(dirname "$0")/../helper.sh"
-plan 6
+plan 9
 
-# gzip/bzip2 原地压缩需要 dup()，WASI 不支持
-# 但管道 stdin 模式可以正常工作
+# gzip 压缩/解压在 WASI 中正常工作
+# stdin 管道模式和文件模式均可用
 
 # gzip -c stdin 压缩
 bb_run_stdin "hello gzip" gzip -c
 is "$_BB_EXIT" "0" "gzip -c stdin 压缩成功"
 cmp_ok "${#_BB_STDOUT}" ">" "0" "gzip -c 输出非空"
 
-# gzip -c 文件输出也需要 dup，应失败
+# gzip -c 文件压缩
 mkfile "gz_file.txt" "test"
 bb_run gzip -c "$TMPDIR/gz_file.txt"
-cmp_ok "$_BB_EXIT" "!=" "0" "gzip -c 文件因 dup 限制失败"
+is "$_BB_EXIT" "0" "gzip -c 文件压缩成功"
+cmp_ok "${#_BB_STDOUT}" ">" "0" "gzip -c 文件输出非空"
 
-# gzip 原地压缩文件也应失败
+# gzip 原地压缩文件
 bb_run gzip "$TMPDIR/gz_file.txt"
-cmp_ok "$_BB_EXIT" "!=" "0" "gzip 原地压缩因 dup 限制失败"
+is "$_BB_EXIT" "0" "gzip 原地压缩成功"
+ok "[ -f $TMPDIR/gz_file.txt.gz ]" "gzip 压缩后 .gz 文件存在"
 
 # gzip -d stdin 解压（先构造 gzip 数据到文件，再用文件当 stdin）
 d=$(mktemp -d /tmp/bbtest_gz.XXXXXX)
@@ -31,8 +33,9 @@ else
 fi
 rm -rf "$d"
 
-# gunzip 也因 dup 限制不能原地解压
-bb_run gunzip "$TMPDIR/gz_file.txt"
-cmp_ok "$_BB_EXIT" "!=" "0" "gunzip 原地解压因 dup 限制失败"
+# gunzip 原地解压
+bb_run gunzip "$TMPDIR/gz_file.txt.gz"
+is "$_BB_EXIT" "0" "gunzip 原地解压成功"
+ok "[ -f $TMPDIR/gz_file.txt ]" "gunzip 解压后原文件恢复"
 
 done_testing

@@ -1,23 +1,25 @@
 #!/bin/bash
 source "$(dirname "$0")/../helper.sh"
-plan 6
+plan 8
 
-# lzop 原地压缩文件需要 dup()，WASI 不支持
-# 但 stdin 管道模式可以工作
+# lzop 压缩/解压在 WASI 中正常工作
+# stdin 管道模式和文件模式均可用
 
 # lzop -c stdin 压缩
 bb_run_stdin "hello lzop" lzop -c
 is "$_BB_EXIT" "0" "lzop -c stdin 压缩成功"
 cmp_ok "${#_BB_STDOUT}" ">" "0" "lzop -c 输出非空"
 
-# lzop 原地压缩文件应失败
+# lzop 原地压缩文件
 mkfile "lzop_file.txt" "test"
 bb_run lzop "$TMPDIR/lzop_file.txt"
-cmp_ok "$_BB_EXIT" "!=" "0" "lzop 原地压缩因 dup 限制失败"
+is "$_BB_EXIT" "0" "lzop 原地压缩成功"
+ok "[ -f $TMPDIR/lzop_file.txt.lzo ]" "lzop 压缩后 .lzo 文件存在"
 
-# lzop -c 文件也应失败
+# lzop -c 文件压缩
 bb_run lzop -c "$TMPDIR/lzop_file.txt"
-cmp_ok "$_BB_EXIT" "!=" "0" "lzop -c 文件因 dup 限制失败"
+is "$_BB_EXIT" "0" "lzop -c 文件压缩成功"
+cmp_ok "${#_BB_STDOUT}" ">" "0" "lzop -c 文件输出非空"
 
 # lzop 不存在的文件
 bb_run lzop "$TMPDIR/nonexistent.txt"

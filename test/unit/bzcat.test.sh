@@ -1,16 +1,17 @@
 #!/bin/bash
 source "$(dirname "$0")/../helper.sh"
-plan 4
+plan 5
 
-# bzcat 读取压缩文件需要 dup()，WASI 不支持
+# bzcat 读取压缩文件在 WASI 中正常工作
 
-# bzcat 文件应失败
+# bzcat 文件解压到 stdout
 mkfile "bzcat_test.txt" "bzcat test"
 bb_run bzip2 "$TMPDIR/bzcat_test.txt"
-cmp_ok "$_BB_EXIT" "!=" "0" "bzip2 压缩因 dup 限制失败"
+is "$_BB_EXIT" "0" "bzip2 压缩成功"
 
 bb_run bzcat "$TMPDIR/bzcat_test.txt.bz2"
-cmp_ok "$_BB_EXIT" "!=" "0" "bzcat 因 dup 限制失败"
+is "$_BB_EXIT" "0" "bzcat 解压成功"
+is "$_BB_STDOUT" "bzcat test" "bzcat 输出内容正确"
 
 # bzcat 不存在的文件
 bb_run bzcat "$TMPDIR/nonexistent.bz2"

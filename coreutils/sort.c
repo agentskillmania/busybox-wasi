@@ -671,10 +671,11 @@ int sort_main(int argc UNUSED_PARAM, char **argv)
 	/* Print it */
 #if ENABLE_FEATURE_SORT_BIG
 	/* Open output file _after_ we read all input ones */
-	if (option_mask32 & FLAG_o)
+	if (option_mask32 & FLAG_o) {
 		/* WASI: close stdout 然后 open，fd 应分配到 1 */
 		close(STDOUT_FILENO);
 		xopen(str_o, O_WRONLY|O_CREAT|O_TRUNC); /* fd will be 1 */
+	}
 #endif
 	{
 		int ch = (option_mask32 & FLAG_z) ? '\0' : '\n';
