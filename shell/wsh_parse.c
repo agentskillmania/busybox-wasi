@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <fnmatch.h>
 #include "wsh_parse.h"
 #include "wsh_vars.h"
 #include "wsh_pipe.h"
@@ -17,6 +18,8 @@
 enum {
 	WSH_TOK_WORD,
 	WSH_TOK_SEMI,
+	WSH_TOK_AND,
+	WSH_TOK_OR,
 	WSH_TOK_LPAREN,
 	WSH_TOK_RPAREN,
 	WSH_TOK_EOF
@@ -54,6 +57,24 @@ static int wsh_tokenize(const char *input, struct wsh_tok *toks, int max)
 			toks[n].len = 1;
 			toks[n].type = WSH_TOK_SEMI;
 			n++; i++;
+			continue;
+		}
+
+		/* && */
+		if (input[i] == '&' && input[i + 1] == '&') {
+			toks[n].start = &input[i];
+			toks[n].len = 2;
+			toks[n].type = WSH_TOK_AND;
+			n++; i += 2;
+			continue;
+		}
+
+		/* || */
+		if (input[i] == '|' && input[i + 1] == '|') {
+			toks[n].start = &input[i];
+			toks[n].len = 2;
+			toks[n].type = WSH_TOK_OR;
+			n++; i += 2;
 			continue;
 		}
 
@@ -102,7 +123,8 @@ static int wsh_tokenize(const char *input, struct wsh_tok *toks, int max)
 			}
 			if (input[i] == ' ' || input[i] == '\t' ||
 			    input[i] == '\n' || input[i] == ';' ||
-			    input[i] == '(' || input[i] == ')')
+			    input[i] == '(' || input[i] == ')' ||
+			    input[i] == '&')
 				break;
 			i++;
 		}
@@ -248,7 +270,6 @@ static int wsh_parse_if(const struct wsh_tok *toks, int pos, int end, int *rc)
 
 	while (1) {
 		/* 找 then */
-		int w;
 		int then_pos = find_kw(toks, pos, end, then_kws, 1, NULL, 0, 0);
 		if (then_pos < 0) {
 			fprintf(stderr, "wsh: if: missing 'then'\n");
@@ -419,11 +440,120 @@ static int wsh_parse_while(const struct wsh_tok *toks, int pos, int end, int *rc
 	return done_pos + 1;
 }
 
+/* ===================== case 解析 ===================== */
+
+static int wsh_parse_case(const struct wsh_tok *toks, int pos, int end, int *rc)
+{
+	*rc = 0;
+	pos++; /* 跳过 'case' */
+
+	/* 读取要匹配的值 */
+	if (pos >= end || toks[pos].type != WSH_TOK_WORD) {
+		fprintf(stderr, "wsh: case: missing word\n");
+		*rc = 1;
+		return end;
+	}
+	char *word = tok_dup(&toks[pos]);
+	char *value = wsh_expand(word);
+	free(word);
+	pos++;
+
+	/* 期望 'in' */
+	if (pos >= end || !tok_is(&toks[pos], "in")) {
+		fprintf(stderr, "wsh: case: expected 'in'\n");
+		free(value);
+		*rc = 1;
+		return end;
+	}
+	pos++; /* 跳过 'in' */
+
+	/* 找 'esac'，跟踪 case 嵌套深度 */
+	int case_depth = 1;
+	int esac_pos = pos;
+	while (esac_pos < end && toks[esac_pos].type != WSH_TOK_EOF) {
+		if (tok_is(&toks[esac_pos], "case"))
+			case_depth++;
+		else if (tok_is(&toks[esac_pos], "esac")) {
+			case_depth--;
+			if (case_depth == 0) break;
+		}
+		esac_pos++;
+	}
+	if (esac_pos >= end || case_depth != 0) {
+		fprintf(stderr, "wsh: case: missing 'esac'\n");
+		free(value);
+		*rc = 1;
+		return end;
+	}
+
+	/* 遍历 case 分支 */
+	int matched = 0;
+	while (pos < esac_pos) {
+		/* 跳过 ;; 残余 */
+		if (toks[pos].type == WSH_TOK_SEMI) {
+			pos++;
+			continue;
+		}
+
+		/* 读取模式到 ) 为止 */
+		int pat_start = pos;
+		while (pos < esac_pos && toks[pos].type != WSH_TOK_RPAREN)
+			pos++;
+		if (pos >= esac_pos) break;
+
+		/* 构建并展开模式 */
+		char *raw_pat = toks_to_str(toks, pat_start, pos);
+		char *pattern = wsh_expand(raw_pat);
+		free(raw_pat);
+		pos++; /* 跳过 ) */
+
+		/* 匹配模式 */
+		int this_match = (fnmatch(pattern, value, 0) == 0);
+		free(pattern);
+
+		/* 找 body 结束位置 ;;（两个连续 SEMI） */
+		int body_start = pos;
+		int body_end = pos;
+		int nested = 0;
+		while (body_end < esac_pos) {
+			if (tok_is(&toks[body_end], "case"))
+				nested++;
+			else if (tok_is(&toks[body_end], "esac")) {
+				if (nested > 0) nested--;
+				else break;
+			}
+			if (nested == 0 &&
+			    toks[body_end].type == WSH_TOK_SEMI &&
+			    body_end + 1 < esac_pos &&
+			    toks[body_end + 1].type == WSH_TOK_SEMI)
+				break;
+			body_end++;
+		}
+
+		/* 匹配且尚未执行过 → 执行 body */
+		if (this_match && !matched) {
+			*rc = wsh_parse_list(toks, body_start, body_end);
+			matched = 1;
+		}
+
+		pos = body_end;
+		/* 跳过 ;; */
+		if (pos < esac_pos &&
+		    toks[pos].type == WSH_TOK_SEMI &&
+		    pos + 1 < esac_pos &&
+		    toks[pos + 1].type == WSH_TOK_SEMI)
+			pos += 2;
+	}
+
+	free(value);
+	return esac_pos + 1; /* 跳过 esac */
+}
+
 /* ===================== 命令列表解析 ===================== */
 
 /**
  * 解析并执行 token 范围内的命令列表。
- * 顶层循环：跳过 ; → 检测复合命令 → 执行简单命令。
+ * 顶层循环：跳过 ; → 检测复合命令 → 执行简单命令 → && / || 短路。
  */
 static int wsh_parse_list(const struct wsh_tok *toks, int pos, int end)
 {
@@ -452,6 +582,11 @@ static int wsh_parse_list(const struct wsh_tok *toks, int pos, int end)
 			}
 			if (tok_is(&toks[pos], "while")) {
 				pos = wsh_parse_while(toks, pos, end, &rc);
+				wsh_set_last_exitcode(rc);
+				continue;
+			}
+			if (tok_is(&toks[pos], "case")) {
+				pos = wsh_parse_case(toks, pos, end, &rc);
 				wsh_set_last_exitcode(rc);
 				continue;
 			}
@@ -495,10 +630,12 @@ static int wsh_parse_list(const struct wsh_tok *toks, int pos, int end)
 			continue;
 		}
 
-		/* 简单命令：收集到下一个 ; */
+		/* 简单命令：收集到下一个分隔符 */
 		int cmd_start = pos;
 		while (pos < end &&
 		       toks[pos].type != WSH_TOK_SEMI &&
+		       toks[pos].type != WSH_TOK_AND &&
+		       toks[pos].type != WSH_TOK_OR &&
 		       toks[pos].type != WSH_TOK_LPAREN &&
 		       toks[pos].type != WSH_TOK_RPAREN &&
 		       toks[pos].type != WSH_TOK_EOF) {
@@ -506,6 +643,36 @@ static int wsh_parse_list(const struct wsh_tok *toks, int pos, int end)
 		}
 		if (pos > cmd_start)
 			rc = wsh_exec_segment(toks, cmd_start, pos);
+
+		/* && 和 || 短路逻辑 */
+		while (pos < end &&
+		       (toks[pos].type == WSH_TOK_AND ||
+		        toks[pos].type == WSH_TOK_OR)) {
+			int is_and = (toks[pos].type == WSH_TOK_AND);
+			pos++; /* 跳过 && 或 || */
+
+			/* 收集下一条简单命令 */
+			int next_start = pos;
+			while (pos < end &&
+			       toks[pos].type != WSH_TOK_SEMI &&
+			       toks[pos].type != WSH_TOK_AND &&
+			       toks[pos].type != WSH_TOK_OR &&
+			       toks[pos].type != WSH_TOK_LPAREN &&
+			       toks[pos].type != WSH_TOK_RPAREN &&
+			       toks[pos].type != WSH_TOK_EOF) {
+				pos++;
+			}
+
+			if (is_and) {
+				/* &&: 前一条成功(rc==0)才执行 */
+				if (rc == 0 && pos > next_start)
+					rc = wsh_exec_segment(toks, next_start, pos);
+			} else {
+				/* ||: 前一条失败(rc!=0)才执行 */
+				if (rc != 0 && pos > next_start)
+					rc = wsh_exec_segment(toks, next_start, pos);
+			}
+		}
 	}
 
 	return rc;

@@ -227,6 +227,154 @@ static int wsh_read_varname(const char *str, int pos)
 	return len;
 }
 
+/* ===================== $ 展开子函数 ===================== */
+
+/**
+ * 处理 $ 开头的展开（变量、命令替换等）。
+ * 调用时 str[i] == '$'，返回时 i 指向展开内容之后的位置。
+ * 双引号内和普通模式共用此函数。
+ */
+static int wsh_expand_dollar(const char *str, int i, struct exp_buf *buf)
+{
+	i++; /* 跳过 $ */
+
+	/* $$ → PID（WASM 里没有真 PID，返回 "1"） */
+	if (str[i] == '$') {
+		const char *pid = "1";
+		exp_buf_append(buf, pid, strlen(pid));
+		i++;
+		return i;
+	}
+
+	/* $? → 上一个退出码 */
+	if (str[i] == '?') {
+		char num[16];
+		snprintf(num, sizeof(num), "%d", g_last_exitcode);
+		exp_buf_append(buf, num, strlen(num));
+		i++;
+		return i;
+	}
+
+	/* ${...} → 带大括号的变量 / 修饰符 */
+	if (str[i] == '{') {
+		i++; /* 跳过 { */
+
+		/* ${#VAR} → 字符串长度 */
+		if (str[i] == '#') {
+			i++; /* 跳过 # */
+			int nlen = wsh_read_varname(str, i);
+			if (nlen > 0 && nlen < WSH_MAX_NAME) {
+				char vname[WSH_MAX_NAME];
+				memcpy(vname, str + i, nlen);
+				vname[nlen] = '\0';
+				i += nlen;
+				if (str[i] == '}')
+					i++; /* 跳过 } */
+				const char *val = wsh_var_get(vname);
+				char num[16];
+				snprintf(num, sizeof(num), "%d",
+				         val ? (int)strlen(val) : 0);
+				exp_buf_append(buf, num, strlen(num));
+			}
+			return i;
+		}
+
+		int name_start = i;
+		/* 读取变量名，遇到 } 或 : 停止 */
+		while (str[i] && str[i] != '}' && str[i] != ':')
+			i++;
+		int name_len = i - name_start;
+
+		char name[WSH_MAX_NAME];
+		if (name_len > 0 && name_len < (int)sizeof(name)) {
+			memcpy(name, str + name_start, name_len);
+			name[name_len] = '\0';
+		} else {
+			name[0] = '\0';
+		}
+
+		const char *val = wsh_var_get(name);
+
+		/* ${VAR:-default} → 默认值 */
+		if (str[i] == ':' && str[i + 1] == '-') {
+			i += 2; /* 跳过 :- */
+			int def_start = i;
+			while (str[i] && str[i] != '}')
+				i++;
+			if (!val || !*val) {
+				exp_buf_append(buf, str + def_start, i - def_start);
+			} else {
+				exp_buf_append(buf, val, strlen(val));
+			}
+			if (str[i] == '}')
+				i++; /* 跳过 } */
+			return i;
+		}
+
+		/* 普通 ${VAR} */
+		if (str[i] == '}')
+			i++; /* 跳过 } */
+		if (val)
+			exp_buf_append(buf, val, strlen(val));
+		return i;
+	}
+
+	/* $(cmd) → 命令替换 */
+	if (str[i] == '(') {
+		i++; /* 跳过 ( */
+
+		/* 找到匹配的 )，处理嵌套 $() */
+		int depth = 1;
+		int cmd_start = i;
+		while (str[i] && depth > 0) {
+			if (str[i] == '(' && i > 0 && str[i - 1] == '$')
+				depth++;
+			else if (str[i] == ')')
+				depth--;
+			if (depth > 0)
+				i++;
+		}
+
+		int cmd_len = i - cmd_start;
+		if (str[i] == ')')
+			i++; /* 跳过 ) */
+
+		if (cmd_len > 0) {
+			char *cmd = malloc((size_t)cmd_len + 1);
+			if (cmd) {
+				memcpy(cmd, str + cmd_start, cmd_len);
+				cmd[cmd_len] = '\0';
+				char *sub = wsh_command_sub(cmd);
+				if (sub) {
+					exp_buf_append(buf, sub, strlen(sub));
+					free(sub);
+				}
+				free(cmd);
+			}
+		}
+		return i;
+	}
+
+	/* $NAME → 裸变量名 */
+	if (isalpha((unsigned char)str[i]) || str[i] == '_') {
+		int name_len = wsh_read_varname(str, i);
+		if (name_len > 0) {
+			char name[WSH_MAX_NAME];
+			memcpy(name, str + i, name_len);
+			name[name_len] = '\0';
+			const char *val = wsh_var_get(name);
+			if (val)
+				exp_buf_append(buf, val, strlen(val));
+			i += name_len;
+		}
+		return i;
+	}
+
+	/* $ 后面跟的不是有效变量名，原样输出 $ */
+	exp_buf_append(buf, "$", 1);
+	return i;
+}
+
 /* ===================== 主展开函数 ===================== */
 
 char *wsh_expand(const char *str)
@@ -240,16 +388,40 @@ char *wsh_expand(const char *str)
 
 	int i = 0;
 	while (str[i]) {
-		/* 单引号：原样复制直到匹配的单引号 */
+		/* 单引号：原样复制引号间内容（不展开变量，不处理转义） */
 		if (str[i] == '\'') {
-			int start = i;
 			i++; /* 跳过开头单引号 */
+			int content_start = i;
 			while (str[i] && str[i] != '\'')
 				i++;
+			exp_buf_append(&buf, str + content_start, i - content_start);
 			if (str[i] == '\'')
 				i++; /* 跳过结尾单引号 */
-			/* 包含引号本身一起复制 */
-			exp_buf_append(&buf, str + start, i - start);
+			continue;
+		}
+
+		/* 双引号：剥离引号，内部展开 $ 和受限反斜杠 */
+		if (str[i] == '"') {
+			i++; /* 跳过开头双引号 */
+			while (str[i] && str[i] != '"') {
+				/* 双引号内反斜杠只对 " \ $ ` 生效 */
+				if (str[i] == '\\' && str[i + 1]
+				    && (str[i + 1] == '"' || str[i + 1] == '\\'
+				        || str[i + 1] == '$' || str[i + 1] == '`')) {
+					exp_buf_append(&buf, &str[i + 1], 1);
+					i += 2;
+					continue;
+				}
+				/* 双引号内仍展开 $ */
+				if (str[i] == '$') {
+					i = wsh_expand_dollar(str, i, &buf);
+					continue;
+				}
+				exp_buf_append(&buf, &str[i], 1);
+				i++;
+			}
+			if (str[i] == '"')
+				i++; /* 跳过结尾双引号 */
 			continue;
 		}
 
@@ -262,99 +434,7 @@ char *wsh_expand(const char *str)
 
 		/* $ 开头的替换 */
 		if (str[i] == '$') {
-			i++; /* 跳过 $ */
-
-			/* $$ → PID（WASM 里没有真 PID，返回 "1"） */
-			if (str[i] == '$') {
-				const char *pid = "1";
-				exp_buf_append(&buf, pid, strlen(pid));
-				i++;
-				continue;
-			}
-
-			/* $? → 上一个退出码 */
-			if (str[i] == '?') {
-				char num[16];
-				snprintf(num, sizeof(num), "%d", g_last_exitcode);
-				exp_buf_append(&buf, num, strlen(num));
-				i++;
-				continue;
-			}
-
-			/* ${NAME} → 带大括号的变量 */
-			if (str[i] == '{') {
-				i++; /* 跳过 { */
-				int name_start = i;
-				while (str[i] && str[i] != '}')
-					i++;
-				int name_len = i - name_start;
-				if (str[i] == '}')
-					i++; /* 跳过 } */
-
-				char name[WSH_MAX_NAME];
-				if (name_len > 0 && name_len < (int)sizeof(name)) {
-					memcpy(name, str + name_start, name_len);
-					name[name_len] = '\0';
-					const char *val = wsh_var_get(name);
-					if (val)
-						exp_buf_append(&buf, val, strlen(val));
-				}
-				continue;
-			}
-
-			/* $(cmd) → 命令替换 */
-			if (str[i] == '(') {
-				i++; /* 跳过 ( */
-
-				/* 找到匹配的 )，处理嵌套 $() */
-				int depth = 1;
-				int cmd_start = i;
-				while (str[i] && depth > 0) {
-					if (str[i] == '(' && i > 0 && str[i - 1] == '$')
-						depth++;
-					else if (str[i] == ')')
-						depth--;
-					if (depth > 0)
-						i++;
-				}
-
-				int cmd_len = i - cmd_start;
-				if (str[i] == ')')
-					i++; /* 跳过 ) */
-
-				if (cmd_len > 0) {
-					char *cmd = malloc((size_t)cmd_len + 1);
-					if (cmd) {
-						memcpy(cmd, str + cmd_start, cmd_len);
-						cmd[cmd_len] = '\0';
-						char *sub = wsh_command_sub(cmd);
-						if (sub) {
-							exp_buf_append(&buf, sub, strlen(sub));
-							free(sub);
-						}
-						free(cmd);
-					}
-				}
-				continue;
-			}
-
-			/* $NAME → 裸变量名 */
-			if (isalpha((unsigned char)str[i]) || str[i] == '_') {
-				int name_len = wsh_read_varname(str, i);
-				if (name_len > 0) {
-					char name[WSH_MAX_NAME];
-					memcpy(name, str + i, name_len);
-					name[name_len] = '\0';
-					const char *val = wsh_var_get(name);
-					if (val)
-						exp_buf_append(&buf, val, strlen(val));
-					i += name_len;
-				}
-				continue;
-			}
-
-			/* $ 后面跟的不是有效变量名，原样输出 $ */
-			exp_buf_append(&buf, "$", 1);
+			i = wsh_expand_dollar(str, i, &buf);
 			continue;
 		}
 

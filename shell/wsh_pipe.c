@@ -479,6 +479,9 @@ static void wsh_redir_free(struct wsh_redir *r)
 
 /* ===================== 管道执行主函数 ===================== */
 
+/** 捕获模式标志：wsh_capture_output 设置，wsh_run_pipeline 检查 */
+static int g_capturing;
+
 int wsh_run_pipeline(const char *cmdline)
 {
 	char *buf = strdup(cmdline);
@@ -525,6 +528,20 @@ int wsh_run_pipeline(const char *cmdline)
 		/* 输入重定向 */
 		if (redir.in_path) {
 			freopen(redir.in_path, "r", stdin);
+		}
+
+		if (g_capturing) {
+			/* 捕获模式：stdout 已指向捕获文件，直接执行 */
+			if (redir.out_path)
+				freopen(redir.out_path,
+				        redir.out_append ? "a" : "w", stdout);
+			if (redir.err_path)
+				freopen(redir.err_path, "w", stderr);
+
+			int rc = wsh_exec(tok, n);
+			fflush(stdout);
+			wsh_redir_free(&redir);
+			return rc;
 		}
 
 		/* 输出重定向：有重定向则写到目标文件，否则走临时文件 */
@@ -675,8 +692,10 @@ char *wsh_capture_output(const char *cmdline)
 	if (freopen(tmp_path, "w", stdout) == NULL)
 		return strdup("");
 
+	g_capturing = 1;
 	int rc = wsh_run_pipeline(cmdline);
 	fflush(stdout);
+	g_capturing = 0;
 	(void)rc;
 
 	/* 读取临时文件，去掉尾部换行 */
