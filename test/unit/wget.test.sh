@@ -1,6 +1,6 @@
 #!/bin/bash
 source "$(dirname "$0")/../helper.sh"
-plan 9
+plan 11
 
 # 寻找可用端口
 PORT=""
@@ -58,5 +58,21 @@ bb_run_capture wget --help
 is "$_BB_EXIT" "0" "wget --help 成功"
 _wget_help="${_BB_STDOUT}${_BB_STDERR}"
 like "$_wget_help" "wget" "wget --help 输出包含 wget"
+
+# ========== HTTPS 测试（真实公网） ==========
+
+# wget 下载百度首页（验证 TLS 1.2 握手 + 数据传输）
+# 不用 bb_run_net，避免 $() 子进程的时序问题
+# 重试最多 3 次，应对网络波动
+_HTTPS_OK=0
+for _attempt in 1 2 3; do
+    $WASMTIME $_WASM_FLAGS $_WASM_NET_FLAGS \
+        --dir="$_WASM_DIR" \
+        "$BUSYBOX_WASM" wget --no-check-certificate \
+        "https://www.baidu.com" -O "$TMPDIR/baidu.html" 2>/dev/null && _HTTPS_OK=1 && break
+    sleep 1
+done
+is "$_HTTPS_OK" "1" "wget HTTPS 下载百度首页成功"
+like "$(cat "$TMPDIR/baidu.html" 2>/dev/null)" "百度一下" "wget HTTPS 下载内容包含百度"
 
 done_testing

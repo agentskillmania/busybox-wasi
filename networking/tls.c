@@ -636,7 +636,7 @@ static void tls_free_outbuf(tls_state_t *tls)
 	tls->outbuf = NULL;
 }
 
-static void *tls_get_outbuf(tls_state_t *tls, int len)
+void *tls_get_outbuf(tls_state_t *tls, int len)
 {
 	if (len > TLS_MAX_OUTBUF)
 		xfunc_die();
@@ -931,7 +931,7 @@ static void xwrite_and_update_handshake_hash(tls_state_t *tls, unsigned size)
 	xwrite_encrypted(tls, size, RECORD_TYPE_HANDSHAKE);
 }
 
-static int tls_has_buffered_record(tls_state_t *tls)
+int tls_has_buffered_record(tls_state_t *tls)
 {
 	int buffered = tls->buffered_size;
 	struct record_hdr *xhdr;
@@ -1038,7 +1038,7 @@ static void tls_aesgcm_decrypt(tls_state_t *tls, uint8_t *buf, int size)
 #undef COUNTER
 }
 
-static int tls_xread_record(tls_state_t *tls, const char *expected)
+int tls_xread_record(tls_state_t *tls, const char *expected)
 {
 	struct record_hdr *xhdr;
 	int sz;
@@ -2351,7 +2351,7 @@ void FAST_FUNC tls_handshake(tls_state_t *tls, const char *sni)
 	tls->hsd = NULL;
 }
 
-static void tls_xwrite(tls_state_t *tls, int len)
+void tls_xwrite(tls_state_t *tls, int len)
 {
 	dbg(">> DATA\n");
 	xwrite_encrypted(tls, len, RECORD_TYPE_APPLICATION_DATA);

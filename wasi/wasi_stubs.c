@@ -101,6 +101,10 @@ int WEXITSTATUS(int status) { (void)status; return 0; }
 /* ========== 文件/IO stub ========== */
 
 int pipe(int fd[2]) { (void)fd; errno = ENOSYS; return -1; }
+int socketpair(int domain, int type, int protocol, int sv[2]) {
+	(void)domain; (void)type; (void)protocol; (void)sv;
+	errno = ENOSYS; return -1;
+}
 
 /* dup/dup2 无法实现。
  * wasmtime wasip2 不支持 fd_renumber syscall（所有调用返回 EBADF），
@@ -339,6 +343,68 @@ FILE *popen(const char *command, const char *type) {
     (void)command; (void)type; errno = ENOSYS; return NULL;
 }
 int pclose(FILE *stream) { (void)stream; errno = ENOSYS; return -1; }
+
+/* ========== /dev/urandom 模拟 ========== */
+/* BusyBox TLS 通过 open_read_close("/dev/urandom", buf, len) 获取随机数。
+ * WASI 中 /dev/urandom 不可用，通过 --wrap 拦截 open/read/close，
+ * 将 /dev/urandom 和 /dev/random 的读取重定向到 arc4random_buf
+ * （底层走 wasi:random 的 random_get 系统调用）。
+ * 同时拦截 read/write 实现 TLS 内联加解密（见 wasi_tls_glue.c）。
+ * 链接标志: -Wl,--wrap=open -Wl,--wrap=read -Wl,--wrap=write -Wl,--wrap=close */
+
+/* wasi_tls_glue.c 提供的 TLS 内联函数 */
+extern int wasi_tls_is_active(int fd);
+extern ssize_t wasi_tls_read(void *buf, size_t count);
+extern ssize_t wasi_tls_write(const void *buf, size_t count);
+extern void wasi_tls_close(void);
+
+/* TLS 内部写网络时会调用 xwrite → write()，不能再次进入 TLS 路径。
+ * 用此标志防止 __wrap_write 递归。 */
+extern int wasi_tls_in_write(void);
+extern int wasi_tls_in_read(void);
+
+#include <stdarg.h>
+
+#define _URANDOM_MAGIC_FD 9998
+
+int __wrap_open(const char *path, int flags, ...) {
+	if (strcmp(path, "/dev/urandom") == 0 || strcmp(path, "/dev/random") == 0) {
+		return _URANDOM_MAGIC_FD;
+	}
+	mode_t mode = 0;
+	if (flags & O_CREAT) {
+		va_list ap;
+		va_start(ap, flags);
+		mode = (mode_t)va_arg(ap, int);
+		va_end(ap);
+	}
+	return __real_open(path, flags, mode);
+}
+
+ssize_t __wrap_read(int fd, void *buf, size_t count) {
+	if (fd == _URANDOM_MAGIC_FD) {
+		arc4random_buf(buf, count);
+		return (ssize_t)count;
+	}
+	if (!wasi_tls_in_read() && wasi_tls_is_active(fd))
+		return wasi_tls_read(buf, count);
+	return __real_read(fd, buf, count);
+}
+
+ssize_t __wrap_write(int fd, const void *buf, size_t count) {
+	if (!wasi_tls_in_write() && wasi_tls_is_active(fd))
+		return wasi_tls_write(buf, count);
+	return __real_write(fd, buf, count);
+}
+
+int __wrap_close(int fd) {
+	if (fd == _URANDOM_MAGIC_FD) {
+		return 0;
+	}
+	if (wasi_tls_is_active(fd))
+		wasi_tls_close();
+	return __real_close(fd);
+}
 
 /* ========== 文件属主 stub ========== */
 

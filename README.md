@@ -59,6 +59,12 @@ wasmtime -W exceptions=y --dir=/tmp busybox.wasm ls /tmp
 
 # Use the built-in shell (wsh)
 wasmtime -W exceptions=y --dir=/tmp busybox.wasm wsh -c 'echo hello | tr a-z A-Z'
+
+# HTTPS download (wget with built-in TLS 1.2, no certificate verification)
+wasmtime -W exceptions=y \
+  -S tcp=y -S udp=y -S inherit-network -S allow-ip-name-lookup=y \
+  --dir=/tmp busybox.wasm wget --no-check-certificate \
+  https://example.com -O /tmp/index.html
 ```
 
 ## Architecture
@@ -93,7 +99,8 @@ The project adds a compatibility layer between BusyBox and the WASI runtime:
 | File | Purpose |
 |------|---------|
 | `wasi_main.c` | Entry bridge: `__main_argc_argv` -> `busybox_real_main` |
-| `wasi/wasi_stubs.c` | POSIX function stubs (fork, pipe, signal, etc.) returning `ENOSYS` or safe defaults |
+| `wasi/wasi_stubs.c` | POSIX function stubs (fork, pipe, signal, etc.) returning `ENOSYS` or safe defaults; `/dev/urandom` simulation; TLS-transparent read/write interception |
+| `wasi/wasi_tls_glue.c` | Inline TLS glue for single-process WASM: makes HTTPS work without fork/socketpair |
 | `wasi/wasi_compat.h` | Function declarations patching WASI header gaps |
 | `wasi_include/` | Header files supplementing missing POSIX definitions |
 | `arch/wasm32/Makefile` | Toolchain configuration for WASM build |
@@ -114,7 +121,7 @@ This is a WebAssembly port running in a sandboxed environment. Many POSIX featur
 | Category | Status | Notes |
 |----------|--------|-------|
 | File I/O | Partially works | Requires `--dir=` flag in wasmtime for filesystem access |
-| Networking | Partially works | HTTP (wget), DNS (nslookup), TCP (nc/telnet) work in some runtimes |
+| Networking | Partially works | HTTP and HTTPS (wget), DNS (nslookup), TCP (nc/telnet) work with network flags |
 | Processes | Not supported | No `fork()`, `exec()`, `waitpid()` — always returns error |
 | Pipes | OS-level not available | No `pipe()`, `dup2()` — but wsh simulates pipelines via temp files |
 | Signals | Not supported | Stubs return `ENOSYS`; no `kill`, `SIGINT` handling |
@@ -124,7 +131,7 @@ This is a WebAssembly port running in a sandboxed environment. Many POSIX featur
 | Symlinks | Not supported | wasmtime prohibits symlink creation; `ln -s` returns EPERM |
 | Permissions | Ignored | `chmod`, `fchmod`, `chown` are no-ops in the WASM sandbox |
 
-Commands that **work well**: file operations (cat, cp, mv, rm, ls), text processing (grep, sed, awk, sort), compression (gzip, bzip2, xz), checksums (md5sum, sha256sum), networking (wget, nc), and other single-process utilities.
+Commands that **work well**: file operations (cat, cp, mv, rm, ls), text processing (grep, sed, awk, sort), compression (gzip, bzip2, xz), checksums (md5sum, sha256sum), networking (wget with HTTPS, nc), and other single-process utilities.
 
 ## License
 

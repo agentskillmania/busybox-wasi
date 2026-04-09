@@ -194,7 +194,7 @@ wasmtime -W exceptions=y \
 
 | Command | Status | Notes |
 |---------|--------|-------|
-| `wget` | ⚠️ | Works with network flags. DNS may fail without `allow-ip-name-lookup=y` |
+| `wget` | ⚠️ | Works with network flags. HTTPS supported via built-in TLS 1.2 (no certificate verification). DNS may fail without `allow-ip-name-lookup=y` |
 | `nc` / `netcat` | ⚠️ | Requires network flags. Basic TCP connections work |
 | `telnet` | ⚠️ | Requires network flags. Interactive TTY may be limited |
 | `tcpsvd` | ⚠️ | Requires network flags |

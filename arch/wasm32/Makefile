@@ -40,6 +40,8 @@ CPPFLAGS += -UIP_PKTINFO -UIPV6_PKTINFO
 
 # 链接标志
 # --error-limit=0 显示所有链接错误
+# --wrap=open/read/close 拦截 /dev/urandom 访问，重定向到 wasi:random
 LDFLAGS += -Wl,--error-limit=0
+LDFLAGS += -Wl,--wrap=open -Wl,--wrap=read -Wl,--wrap=write -Wl,--wrap=close
 
 endif # WASI_SDK

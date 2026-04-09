@@ -768,6 +768,18 @@ static int spawn_https_helper_openssl(const char *host, unsigned port)
 #if ENABLE_FEATURE_WGET_HTTPS
 static void spawn_ssl_client(const char *host, int network_fd, int flags)
 {
+#ifdef __wasi__
+	/* WASM 单进程环境：直接在 network fd 上做 TLS 握手，
+	 * 不用 fork/socketpair。后续 read/write 通过
+	 * --wrap 拦截自动走 TLS 加解密。 */
+	if (!(option_mask32 & WGET_OPT_NO_CHECK_CERT)) {
+		option_mask32 |= WGET_OPT_NO_CHECK_CERT;
+		bb_simple_error_msg("note: TLS certificate validation not implemented");
+	}
+	/* wasi_tls_glue.c 中的函数 */
+	extern void wasi_tls_setup(const char *host, int fd);
+	wasi_tls_setup(host, network_fd);
+#else
 	int sp[2];
 	int pid;
 	char *servername, *p;
@@ -819,6 +831,7 @@ static void spawn_ssl_client(const char *host, int network_fd, int flags)
 	free(servername);
 	close(sp[1]);
 	xmove_fd(sp[0], network_fd);
+#endif /* __wasi__ */
 }
 #endif
 
