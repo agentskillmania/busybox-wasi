@@ -12,6 +12,8 @@
 
 详细的逐命令文档（包含已知限制）请参阅 [COMMANDS_zh.md](COMMANDS_zh.md)。
 
+内置 shell (wsh) 的文档请参阅 [WSH_zh.md](WSH_zh.md)。
+
 ## 快速开始
 
 ### 依赖

@@ -12,6 +12,8 @@ This is **not** an official BusyBox project. It is a fork that adds a WASI compa
 
 For detailed command-by-command documentation including known limitations, see [COMMANDS.md](COMMANDS.md).
 
+For documentation on the built-in shell (wsh), see [WSH.md](WSH.md).
+
 ## Quick Start
 
 ### Prerequisites
