@@ -101,14 +101,6 @@ The project adds a compatibility layer between BusyBox and the WASI runtime:
 
 ## Manual Build
 
-If you don't want to use `build_wasm.sh`:
-
-```bash
-make clean
-make ARCH=wasm32 WASI_SDK=/path/to/wasi-sdk SKIP_STRIP=y -j$(nproc)
-cp busybox_unstripped busybox.wasm
-```
-
 To modify the build configuration, edit `configs/wasm_defconfig` or run:
 
 ```bash
@@ -124,7 +116,7 @@ This is a WebAssembly port running in a sandboxed environment. Many POSIX featur
 | File I/O | Partially works | Requires `--dir=` flag in wasmtime for filesystem access |
 | Networking | Partially works | HTTP (wget), DNS (nslookup), TCP (nc/telnet) work in some runtimes |
 | Processes | Not supported | No `fork()`, `exec()`, `waitpid()` — always returns error |
-| Pipes | Not supported | No `pipe()`, `dup2()` — pipelines in shell don't work |
+| Pipes | OS-level not available | No `pipe()`, `dup2()` — but wsh simulates pipelines via temp files |
 | Signals | Not supported | Stubs return `ENOSYS`; no `kill`, `SIGINT` handling |
 | Users/Groups | Not supported | `getpwuid()`, `getgrnam()` return NULL |
 | Mount/filesystem | Not supported | No `mount()`, `umount()`, `statfs()` returns defaults |

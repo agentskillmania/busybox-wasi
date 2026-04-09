@@ -99,14 +99,6 @@ wasmtime -W exceptions=y --dir=/tmp busybox.wasm wsh -c 'echo hello | tr a-z A-Z
 
 ## 手动构建
 
-如果不使用 `build_wasm.sh` 脚本：
-
-```bash
-make clean
-make ARCH=wasm32 WASI_SDK=/path/to/wasi-sdk SKIP_STRIP=y -j$(nproc)
-cp busybox_unstripped busybox.wasm
-```
-
 修改构建配置可编辑 `configs/wasm_defconfig`，或运行：
 
 ```bash
@@ -122,7 +114,7 @@ make ARCH=wasm32 WASI_SDK=$HOME/wasi-sdk menuconfig
 | 文件 I/O | 部分可用 | 需要运行时 `--dir=` 参数授权文件系统访问 |
 | 网络 | 部分可用 | HTTP（wget）、DNS（nslookup）、TCP（nc/telnet）在部分运行时可用 |
 | 进程管理 | 不可用 | 无 `fork()`、`exec()`、`waitpid()`，始终返回错误 |
-| 管道 | 不可用 | 无 `pipe()`、`dup2()`，shell 管道不可用 |
+| 管道 | OS 级不可用 | 无 `pipe()`、`dup2()`，但 wsh 通过临时文件模拟管道 |
 | 信号 | 不可用 | stub 返回 `ENOSYS`，无 `kill`、`SIGINT` 处理 |
 | 用户/组 | 不可用 | `getpwuid()`、`getgrnam()` 返回 NULL |
 | 挂载/文件系统 | 不可用 | 无 `mount()`、`umount()`，`statfs()` 返回默认值 |
