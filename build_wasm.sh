@@ -39,7 +39,7 @@ echo ""
 $WASMTIME -W exceptions=y "$PROJ_DIR/busybox.wasm" --list 2>&1 | wc -l | xargs -I{} echo "{} 个 applets"
 echo ""
 echo "--- wsh 验证 ---"
-$WASMTIME -W exceptions=y --dir=/tmp "$PROJ_DIR/busybox.wasm" wsh -c "test" 2>&1
+$WASMTIME -W exceptions=y --dir=/tmp "$PROJ_DIR/busybox.wasm" wsh -c "true" 2>&1
 echo ""
 echo "--- 变量 ---"
 $WASMTIME -W exceptions=y --dir=/tmp "$PROJ_DIR/busybox.wasm" wsh -c 'X=hello; echo $X' 2>&1
