@@ -1,6 +1,6 @@
 #!/bin/bash
 source "$(dirname "$0")/../helper.sh"
-plan 58
+plan 69
 
 # === 变量赋值和展开 ===
 bb_run_wsh 'X=hello; echo $X'
@@ -233,5 +233,47 @@ is "$_BB_STDOUT" $'one\ntwo' "wsh 多行注释"
 # 引号内 # 不是注释
 bb_run_wsh $'echo "# not a comment"'
 is "$_BB_STDOUT" "# not a comment" "wsh 引号内 # 不是注释"
+
+# === 算术表达式 $((...)) ===
+
+# 基本加减乘除
+bb_run_wsh $'echo $((1 + 1))'
+is "$_BB_STDOUT" "2" "wsh 算术加法"
+
+bb_run_wsh $'echo $((10 - 3))'
+is "$_BB_STDOUT" "7" "wsh 算术减法"
+
+bb_run_wsh $'echo $((3 * 4))'
+is "$_BB_STDOUT" "12" "wsh 算术乘法"
+
+bb_run_wsh $'echo $((10 / 3))'
+is "$_BB_STDOUT" "3" "wsh 算术除法"
+
+bb_run_wsh $'echo $((10 % 3))'
+is "$_BB_STDOUT" "1" "wsh 算术取模"
+
+# 变量参与运算
+bb_run_wsh $'X=5; echo $((X + 3))'
+is "$_BB_STDOUT" "8" "wsh 算术变量"
+
+# 运算符优先级
+bb_run_wsh $'echo $((2 + 3 * 4))'
+is "$_BB_STDOUT" "14" "wsh 算术优先级"
+
+# 括号改变优先级
+bb_run_wsh $'echo $(((2 + 3) * 4))'
+is "$_BB_STDOUT" "20" "wsh 算术括号"
+
+# 不存在的变量视为 0
+bb_run_wsh $'echo $((UNDEF + 1))'
+is "$_BB_STDOUT" "1" "wsh 算术未定义变量"
+
+# 嵌套在命令替换中
+bb_run_wsh $'echo $(echo $((1 + 1)))'
+is "$_BB_STDOUT" "2" "wsh 算术嵌套命令替换"
+
+# 空表达式
+bb_run_wsh $'echo $(( ))'
+is "$_BB_STDOUT" "0" "wsh 算术空表达式"
 
 done_testing

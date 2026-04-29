@@ -227,6 +227,90 @@ static int wsh_read_varname(const char *str, int pos)
 	return len;
 }
 
+/* ===================== 算术表达式求值 ===================== */
+
+static void arith_skip_ws(const char **p)
+{
+	while (**p == ' ' || **p == '\t' || **p == '\n')
+		(*p)++;
+}
+
+static long arith_number(const char **p)
+{
+	long val = 0;
+	while (isdigit((unsigned char)**p)) {
+		val = val * 10 + (**p - '0');
+		(*p)++;
+	}
+	return val;
+}
+
+static long wsh_arith_expr(const char **p);
+
+static long wsh_arith_factor(const char **p)
+{
+	arith_skip_ws(p);
+	if (**p == '(') {
+		(*p)++;
+		long val = wsh_arith_expr(p);
+		arith_skip_ws(p);
+		if (**p == ')') (*p)++;
+		return val;
+	}
+	if (isalpha((unsigned char)**p) || **p == '_') {
+		char name[WSH_MAX_NAME];
+		int n = 0;
+		while (**p && (isalnum((unsigned char)**p) || **p == '_')) {
+			if (n < WSH_MAX_NAME - 1) name[n++] = **p;
+			(*p)++;
+		}
+		name[n] = '\0';
+		const char *val = wsh_var_get(name);
+		return val ? atol(val) : 0;
+	}
+	return arith_number(p);
+}
+
+static long wsh_arith_term(const char **p)
+{
+	long val = wsh_arith_factor(p);
+	while (1) {
+		arith_skip_ws(p);
+		char op = **p;
+		if (op != '*' && op != '/' && op != '%') break;
+		(*p)++;
+		long rhs = wsh_arith_factor(p);
+		if (op == '*') val *= rhs;
+		else if (op == '/') val = rhs ? val / rhs : 0;
+		else if (op == '%') val = rhs ? val % rhs : 0;
+	}
+	return val;
+}
+
+static long wsh_arith_expr(const char **p)
+{
+	long val = wsh_arith_term(p);
+	while (1) {
+		arith_skip_ws(p);
+		char op = **p;
+		if (op != '+' && op != '-') break;
+		(*p)++;
+		long rhs = wsh_arith_term(p);
+		if (op == '+') val += rhs;
+		else val -= rhs;
+	}
+	return val;
+}
+
+static char *wsh_eval_arith(const char *expr)
+{
+	const char *p = expr;
+	long val = wsh_arith_expr(&p);
+	char *result = malloc(32);
+	if (result) snprintf(result, 32, "%ld", val);
+	return result;
+}
+
 /* ===================== $ 展开子函数 ===================== */
 
 /**
@@ -319,6 +403,38 @@ static int wsh_expand_dollar(const char *str, int i, struct exp_buf *buf)
 		return i;
 	}
 
+	/* $((expr)) → 算术表达式 */
+	if (str[i] == '(' && str[i + 1] == '(') {
+		i += 2; /* 跳过 (( */
+		int depth = 1;
+		int expr_start = i;
+		while (str[i] && depth > 0) {
+			if (str[i] == '(' && str[i + 1] == '(') {
+				depth++; i += 2;
+			} else if (str[i] == ')' && str[i + 1] == ')') {
+				depth--; i += 2;
+			} else {
+				i++;
+			}
+		}
+		int expr_len = i - expr_start - 2;
+		if (expr_len >= 0) {
+			char *expr = malloc((size_t)(expr_len + 1));
+			if (expr) {
+				if (expr_len > 0)
+					memcpy(expr, str + expr_start, expr_len);
+				expr[expr_len] = '\0';
+				char *result = wsh_eval_arith(expr);
+				if (result) {
+					exp_buf_append(buf, result, strlen(result));
+					free(result);
+				}
+				free(expr);
+			}
+		}
+		return i;
+	}
+
 	/* $(cmd) → 命令替换 */
 	if (str[i] == '(') {
 		i++; /* 跳过 ( */
@@ -327,6 +443,21 @@ static int wsh_expand_dollar(const char *str, int i, struct exp_buf *buf)
 		int depth = 1;
 		int cmd_start = i;
 		while (str[i] && depth > 0) {
+			/* 跳过 $((...))，避免被误算为嵌套 $( */
+			if (str[i] == '$' && str[i + 1] == '(' && str[i + 2] == '(') {
+				i += 3;
+				int ad = 1;
+				while (str[i] && ad > 0) {
+					if (str[i] == '(' && str[i + 1] == '(') {
+						ad++; i += 2;
+					} else if (str[i] == ')' && str[i + 1] == ')') {
+						ad--; i += 2;
+					} else {
+						i++;
+					}
+				}
+				continue;
+			}
 			if (str[i] == '(' && i > 0 && str[i - 1] == '$')
 				depth++;
 			else if (str[i] == ')')
