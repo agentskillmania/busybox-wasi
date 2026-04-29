@@ -170,9 +170,14 @@ Nesting is supported: `$(echo $(echo deep))` works by recursive expansion.
 | I/O redirection | Supported | `>`, `>>`, `<`, `2>` |
 | if/elif/else/fi | Supported | Nestable |
 | for/in/do/done | Supported | Nestable |
-| while/do/done | Supported | With `expr` for arithmetic |
+| while/do/done | Supported | With `expr` or `$((...))` for arithmetic |
+| case/in/esac | Supported | Nestable, glob patterns in branches |
 | Subshells | Supported | Variable scoping via save/restore |
 | Glob patterns | Supported | `*`, `?` in file paths |
+| `&&` / `||` operators | Supported | Real short-circuit logic |
+| Newline as command separator | Supported | Implicit `;` between commands |
+| `#` comments | Supported | To end of line |
+| `$((...))` arithmetic | Supported | `+ - * / %`, parentheses, variables |
 | `$?` exit code | Supported | |
 | `$$` pseudo PID | Supported | Returns fixed number |
 | `;` command separator | Supported | |
@@ -183,27 +188,23 @@ Nesting is supported: `$(echo $(echo deep))` works by recursive expansion.
 
 | Feature | Reason |
 |---------|--------|
-| `case ... esac` | Not implemented in parser |
-| `&&` operator | Not implemented in tokenizer |
-| `||` operator | Accidentally works via pipe split, not real short-circuit |
 | `break` / `continue` | Not implemented |
 | `$#`, `$0`-`$9` | Positional parameters not available |
 | `$!` | Background process PID not applicable |
-| Quote stripping | Single and double quotes are passed through to commands literally |
-| `${VAR:-default}` | Variable modifiers not supported |
-| `${#VAR}` | String length not supported |
+| Function definitions | Design choice — not needed for agent scripts |
+| Single-quote stripping | Single quotes passed through literally (double quotes are stripped) |
 | `echo -e` in pipes | `\n` not expanded inside wsh pipe data |
 | Interactive mode | Only `-c CMD` mode supported |
 
 ### Behavioral Notes
 
-- **Quote handling**: `echo 'hello'` outputs `'hello'` (with quotes). This is a known bug — quotes are not stripped during variable expansion. As a workaround, avoid quotes when possible:
+- **Quote handling**: `echo 'hello'` outputs `'hello'` (with quotes). Single quotes are not stripped during variable expansion. Double quotes *are* stripped. As a workaround, avoid single quotes when possible:
   ```bash
   echo hello world          # Works fine (no quotes needed for simple words)
   echo $VAR                 # Variables expand without quotes
+  echo "hello $VAR"         # Double quotes are stripped, variables expand
   ```
 - **Multi-line pipe data**: For data containing newlines, write to a file first, then pipe from the file.
-- **`||` behavior**: `false || echo fallback` appears to work, but this is accidental — `||` is split by the pipe `|` tokenizer, not by a proper `||` operator. Do not rely on this.
 - **Pipeline output goes to stderr**: The final stage of a pipeline writes to stderr. This is invisible for normal usage but may matter if you redirect stderr.
 
 ## Architecture

@@ -220,4 +220,4 @@ wasmtime -W exceptions=y \
 
 | 命令 | 状态 | 说明 |
 |------|------|------|
-| `wsh` | ✅ | 自定义 WASM shell。支持变量、命令替换、串行管道（通过临时文件）。内建：`echo`、`cd`、`pwd`、`exit`、`export`、`unset`。无 fork/exec、无作业控制、无通配符 |
+| `wsh` | ✅ | 自定义 WASM shell。支持变量、管道、if/for/while/case、`$((...))` 算术、`#` 注释、多行脚本。无 fork/exec、无函数、无作业控制。详见 [WSH_zh.md](WSH_zh.md) |

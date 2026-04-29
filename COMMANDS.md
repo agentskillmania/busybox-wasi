@@ -220,4 +220,4 @@ wasmtime -W exceptions=y \
 
 | Command | Status | Notes |
 |---------|--------|-------|
-| `wsh` | ✅ | Custom WASM shell. Supports variables, command substitution, serial pipelines (via temp files). Built-ins: `echo`, `cd`, `pwd`, `exit`, `export`, `unset`. No fork/exec, no job control, no globbing |
+| `wsh` | ✅ | Custom WASM shell. Supports variables, pipelines, if/for/while/case, `$((...))` arithmetic, `#` comments, multi-line scripts. No fork/exec, no functions, no job control. See [WSH.md](WSH.md) |
