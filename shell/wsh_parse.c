@@ -58,6 +58,13 @@ static int wsh_tokenize(const char *input, struct wsh_tok *toks, int max)
 		if (!input[i])
 			break;
 
+		/* # 注释：跳到行尾 */
+		if (input[i] == '#') {
+			while (input[i] && input[i] != '\n')
+				i++;
+			continue;
+		}
+
 		/* 换行符作为隐式命令分隔符 */
 		if (saw_newline && n > 0 && toks[n - 1].type != WSH_TOK_SEMI) {
 			int is_pipe_continuation = 0;

@@ -1,6 +1,6 @@
 #!/bin/bash
 source "$(dirname "$0")/../helper.sh"
-plan 52
+plan 58
 
 # === 变量赋值和展开 ===
 bb_run_wsh 'X=hello; echo $X'
@@ -207,5 +207,31 @@ is "$_BB_STDOUT" $'inner\nouter' "wsh 子 shell 跨行"
 # case 跨行
 bb_run_wsh $'X=a\ncase $X in\na) echo A\n;;\n*) echo other\n;;\nesac'
 is "$_BB_STDOUT" "A" "wsh case 跨行"
+
+# === 注释支持 ===
+
+# 基本行尾注释
+bb_run_wsh $'echo hello # this is a comment'
+is "$_BB_STDOUT" "hello" "wsh 行尾注释"
+
+# 整行注释
+bb_run_wsh $'# this is a comment\necho world'
+is "$_BB_STDOUT" "world" "wsh 整行注释"
+
+# 赋值后注释
+bb_run_wsh $'X=hello # comment\necho $X'
+is "$_BB_STDOUT" "hello" "wsh 赋值后注释"
+
+# 注释在控制流中
+bb_run_wsh $'if true # comment\nthen echo yes # another comment\nfi'
+is "$_BB_STDOUT" "yes" "wsh 注释在控制流中"
+
+# 多行注释和空行
+bb_run_wsh $'echo one\n# comment 1\n# comment 2\necho two'
+is "$_BB_STDOUT" $'one\ntwo' "wsh 多行注释"
+
+# 引号内 # 不是注释
+bb_run_wsh $'echo "# not a comment"'
+is "$_BB_STDOUT" "# not a comment" "wsh 引号内 # 不是注释"
 
 done_testing
