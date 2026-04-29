@@ -85,7 +85,7 @@ static int wsh_tokenize(char *cmd, char *tokens[], int max_t)
 {
 	int n = 0;
 	char *sp;
-	char *t = strtok_r(cmd, " \t", &sp);
+	char *t = strtok_r(cmd, " \t\n", &sp);
 	while (t && n < max_t - 1) {
 		tokens[n++] = t;
 		t = strtok_r(NULL, " \t", &sp);
@@ -292,7 +292,7 @@ static int wsh_split_pipe(char *cmd, char *segs[], int max)
 	char *sp;
 	char *s = strtok_r(cmd, "|", &sp);
 	while (s && n < max) {
-		while (*s == ' ' || *s == '\t') s++;
+		while (*s == ' ' || *s == '\t' || *s == '\n') s++;
 		if (*s) segs[n++] = s;
 		s = strtok_r(NULL, "|", &sp);
 	}

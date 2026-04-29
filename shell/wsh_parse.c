@@ -45,11 +45,37 @@ static int wsh_tokenize(const char *input, struct wsh_tok *toks, int max)
 	int i = 0;
 
 	while (input[i] && n < max - 1) {
-		/* 跳过空白 */
-		while (input[i] == ' ' || input[i] == '\t' || input[i] == '\n')
+		/* 跳过空白，记录是否遇到换行 */
+		int saw_newline = 0;
+		const char *last_newline = NULL;
+		while (input[i] == ' ' || input[i] == '\t' || input[i] == '\n') {
+			if (input[i] == '\n') {
+				saw_newline = 1;
+				last_newline = &input[i];
+			}
 			i++;
+		}
 		if (!input[i])
 			break;
+
+		/* 换行符作为隐式命令分隔符 */
+		if (saw_newline && n > 0 && toks[n - 1].type != WSH_TOK_SEMI) {
+			int is_pipe_continuation = 0;
+			if (toks[n - 1].type == WSH_TOK_WORD) {
+				const char *p = toks[n - 1].start + toks[n - 1].len - 1;
+				while (p >= toks[n - 1].start &&
+				       (*p == ' ' || *p == '\t'))
+					p--;
+				if (p >= toks[n - 1].start && *p == '|')
+					is_pipe_continuation = 1;
+			}
+			if (!is_pipe_continuation) {
+				toks[n].start = last_newline;
+				toks[n].len = 1;
+				toks[n].type = WSH_TOK_SEMI;
+				n++;
+			}
+		}
 
 		/* ; */
 		if (input[i] == ';') {
@@ -651,7 +677,9 @@ static int wsh_parse_list(const struct wsh_tok *toks, int pos, int end)
 			int is_and = (toks[pos].type == WSH_TOK_AND);
 			pos++; /* 跳过 && 或 || */
 
-			/* 收集下一条简单命令 */
+			/* 收集下一条简单命令（跳过前导分号） */
+			while (pos < end && toks[pos].type == WSH_TOK_SEMI)
+				pos++;
 			int next_start = pos;
 			while (pos < end &&
 			       toks[pos].type != WSH_TOK_SEMI &&

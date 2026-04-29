@@ -1,6 +1,6 @@
 #!/bin/bash
 source "$(dirname "$0")/../helper.sh"
-plan 39
+plan 52
 
 # === 变量赋值和展开 ===
 bb_run_wsh 'X=hello; echo $X'
@@ -154,5 +154,58 @@ like "$_BB_STDOUT" "6" "wsh 通过管道调用 wc"
 
 bb_run_wsh 'seq 1 5 | sort -r | head -1'
 like "$_BB_STDOUT" "5" "wsh 管道调用 sort -r"
+
+# === 换行作为命令分隔符 ===
+
+# 基本多行：换行代替分号分隔命令
+bb_run_wsh $'echo hello\necho world'
+is "$_BB_STDOUT" $'hello\nworld' "wsh 基本多行命令"
+
+# 变量赋值后换行
+bb_run_wsh $'X=hello\necho $X'
+is "$_BB_STDOUT" "hello" "wsh 多行变量赋值和展开"
+
+# if 跨行：then、fi 单独一行
+bb_run_wsh $'if true\nthen echo yes\nfi'
+is "$_BB_STDOUT" "yes" "wsh if 跨行 then"
+
+bb_run_wsh $'if false\nthen echo yes\nelse echo no\nfi'
+is "$_BB_STDOUT" "no" "wsh if/else 跨行"
+
+# for 跨行：do、done 单独一行
+bb_run_wsh $'for i in a b c\ndo echo $i\ndone'
+is "$_BB_STDOUT" $'a\nb\nc' "wsh for 跨行"
+
+# while 跨行
+bb_run_wsh $'X=0\nwhile [ $X -eq 0 ]\ndo echo zero\nX=1\ndone'
+is "$_BB_STDOUT" "zero" "wsh while 跨行"
+
+# 管道跨行：| 后面换行属于管道延续，不应截断
+bb_run_wsh $'echo hello |\ntr a-z A-Z'
+is "$_BB_STDOUT" "HELLO" "wsh 管道跨行"
+
+# && 跨行
+bb_run_wsh $'true &&\necho yes'
+is "$_BB_STDOUT" "yes" "wsh && 跨行"
+
+# || 跨行
+bb_run_wsh $'false ||\necho fallback'
+is "$_BB_STDOUT" "fallback" "wsh || 跨行"
+
+# 多空行：连续空行不应产生多余副作用
+bb_run_wsh $'echo one\n\n\necho two'
+is "$_BB_STDOUT" $'one\ntwo' "wsh 多空行"
+
+# 缩进：行首空格/制表符
+bb_run_wsh $'echo one\n    echo two\n\techo three'
+is "$_BB_STDOUT" $'one\ntwo\nthree' "wsh 缩进"
+
+# 子 shell 跨行
+bb_run_wsh $'(\necho inner\n)\necho outer'
+is "$_BB_STDOUT" $'inner\nouter' "wsh 子 shell 跨行"
+
+# case 跨行
+bb_run_wsh $'X=a\ncase $X in\na) echo A\n;;\n*) echo other\n;;\nesac'
+is "$_BB_STDOUT" "A" "wsh case 跨行"
 
 done_testing
