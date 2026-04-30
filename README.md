@@ -121,7 +121,7 @@ This is a WebAssembly port running in a sandboxed environment. Many POSIX featur
 | Category | Status | Notes |
 |----------|--------|-------|
 | File I/O | Partially works | Requires `--dir=` flag in wasmtime for filesystem access |
-| Networking | Partially works | HTTP and HTTPS (wget), DNS (nslookup), TCP (nc/telnet) work with network flags |
+| Networking | Partially works | HTTP/HTTPS (wget), TCP (nc/telnet), and DNS resolution (getaddrinfo) work with network flags. nslookup applet itself is not yet functional |
 | Processes | Not supported | No `fork()`, `exec()`, `waitpid()` — always returns error |
 | Pipes | OS-level not available | No `pipe()`, `dup2()` — but wsh simulates pipelines via temp files |
 | Signals | Not supported | Stubs return `ENOSYS`; no `kill`, `SIGINT` handling |

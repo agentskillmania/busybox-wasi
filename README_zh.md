@@ -112,7 +112,7 @@ make ARCH=wasm32 WASI_SDK=$HOME/wasi-sdk menuconfig
 | 类别 | 状态 | 说明 |
 |------|------|------|
 | 文件 I/O | 部分可用 | 需要运行时 `--dir=` 参数授权文件系统访问 |
-| 网络 | 部分可用 | HTTP（wget）、DNS（nslookup）、TCP（nc/telnet）在部分运行时可用 |
+| 网络 | 部分可用 | HTTP/HTTPS（wget）、TCP（nc/telnet）、域名解析（getaddrinfo）在带网络参数的运行时下可用；nslookup 工具本身暂不可用 |
 | 进程管理 | 不可用 | 无 `fork()`、`exec()`、`waitpid()`，始终返回错误 |
 | 管道 | OS 级不可用 | 无 `pipe()`、`dup2()`，但 wsh 通过临时文件模拟管道 |
 | 信号 | 不可用 | stub 返回 `ENOSYS`，无 `kill`、`SIGINT` 处理 |

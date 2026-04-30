@@ -436,9 +436,17 @@ int initgroups(const char *user, gid_t group) {
 /* ========== 文件权限 stub ========== */
 
 /* ========== DNS 解析器 stub ========== */
-/* arpa/nameser.h 声明了 ns_* 函数，但 wasi-libc 不提供实现。
- * nslookup.c (USE_LIBC_RESOLV=1) 依赖这些函数。
- * 返回 -1 或 0 的 stub 实现保证链接通过，运行时 nslookup 不工作。 */
+/* 注意：WASI Preview2 + wasmtime >= 43 在开启 -S allow-ip-name-lookup=yes
+ * 时已支持 getaddrinfo()，wget/nc/telnet/ftpget 等普通网络工具的
+ * 域名解析功能完全可用，不需要修改代码。
+ *
+ * 这些 ns_* stub 仅影响 nslookup.c 的内部 DNS 协议解析器路径
+ * （FEATURE_NSLOOKUP_BIG=y，USE_LIBC_RESOLV=1）。nslookup 自己构造
+ * UDP DNS 查询包并依赖 arpa/nameser.h 的 ns_initparse / ns_parserr 等
+ * 函数来解析响应，而 wasi-libc 未提供这些底层报文解析函数。
+ * 返回 -1 / 0 的空 stub 仅保证链接通过，运行时 nslookup 会崩溃或
+ * 返回错误结果。如需 nslookup 可用，可关闭 FEATURE_NSLOOKUP_BIG
+ * 改用 getaddrinfo() 的简化实现。 */
 
 #include <arpa/nameser.h>
 
