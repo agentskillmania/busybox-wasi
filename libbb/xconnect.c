@@ -277,7 +277,7 @@ IF_NOT_FEATURE_IPV6(sa_family_t af = AF_INET;)
 	 * for each possible socket type (tcp,udp,raw...): */
 	hint.ai_socktype = SOCK_STREAM;
 	hint.ai_flags = ai_flags & ~DIE_ON_ERROR;
-	rc = getaddrinfo(host, NULL, &hint, &result);
+	rc = getaddrinfo(host, "0", &hint, &result);
 	if (rc || !result) {
 		bb_error_msg("bad address '%s'", org_host);
 		if (ai_flags & DIE_ON_ERROR)
