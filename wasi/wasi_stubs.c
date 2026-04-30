@@ -23,6 +23,7 @@
 #include <sys/types.h>
 #include <sys/resource.h>
 #include <sys/mman.h>
+#include <poll.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
@@ -388,7 +389,33 @@ ssize_t __wrap_read(int fd, void *buf, size_t count) {
 	}
 	if (!wasi_tls_in_read() && wasi_tls_is_active(fd))
 		return wasi_tls_read(buf, count);
-	return __real_read(fd, buf, count);
+
+	ssize_t n = __real_read(fd, buf, count);
+
+	/* TLS 内部路径：WASI socket 本质是非阻塞的，但 tls_xread_record
+	 * 期望阻塞语义。当 __real_read 返回 EAGAIN 时，poll 等待数据
+	 * 到达后重试，避免 tls_xread_record 因 EAGAIN 直接 die。
+	 *
+	 * 此处理仅对 TLS 内部读取生效（wasi_tls_in_read == 1），
+	 * 不影响外部调用者的非阻塞语义。 */
+	if (wasi_tls_in_read() && n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) {
+		struct pollfd pfd = { fd, POLLIN, 0 };
+		for (;;) {
+			int rc = poll(&pfd, 1, -1); /* 阻塞直到可读 */
+			if (rc > 0) {
+				n = __real_read(fd, buf, count);
+				break;
+			}
+			if (rc < 0 && errno != EINTR) {
+				/* poll 真出错了，恢复 errno 为 EAGAIN 让上层处理 */
+				errno = EAGAIN;
+				break;
+			}
+			/* rc == 0（timeout=-1 不应发生）或 EINTR：重试 poll */
+		}
+	}
+
+	return n;
 }
 
 ssize_t __wrap_write(int fd, const void *buf, size_t count) {
