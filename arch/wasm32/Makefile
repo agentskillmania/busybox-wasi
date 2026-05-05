@@ -23,9 +23,9 @@ CPPFLAGS += -I$(srctree)/wasi_include -include $(srctree)/wasi/wasi_compat.h
 # 设置 COMPONENT_MODE=y 启用组件模型模式（需要 wac 组合后才能运行）
 # 默认关闭：编译为普通 WASI module，可直接用 wasmtime 运行
 ifdef COMPONENT_MODE
-COMPONENT_POC := $(srctree)/../component-poc
-CPPFLAGS += -I$(COMPONENT_POC)/busybox-host
-EXTRA_LDFLAGS += $(COMPONENT_POC)/busybox-host-src/host_runner.o $(COMPONENT_POC)/busybox-host-src/host_runner_component_type.o
+COMPONENT_DIR := $(srctree)/component
+CPPFLAGS += -I$(COMPONENT_DIR)
+EXTRA_LDFLAGS += $(COMPONENT_DIR)/host_runner.o $(COMPONENT_DIR)/host_runner_component_type.o
 CPPFLAGS += -DCOMPONENT_MODE
 endif
 

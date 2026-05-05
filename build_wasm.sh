@@ -30,6 +30,12 @@ make -C "$PROJ_DIR" ARCH=wasm32 WASI_SDK="$WASI_SDK" wasm_defconfig
 # 清理
 make -C "$PROJ_DIR" ARCH=wasm32 WASI_SDK="$WASI_SDK" clean
 
+# Component 模式：clean 后重新生成 host 绑定（clean 会删除 .o）
+if [ -n "$COMPONENT_MODE" ]; then
+	echo "--- 生成 Component host 绑定 ---"
+	bash "$PROJ_DIR/generate_host_bindings.sh"
+fi
+
 # 编译
 if [ -n "$COMPONENT_MODE" ]; then
 	make -C "$PROJ_DIR" ARCH=wasm32 WASI_SDK="$WASI_SDK" SKIP_STRIP=y COMPONENT_MODE=y -j"$JOBS"
@@ -45,8 +51,8 @@ if [ -n "$COMPONENT_MODE" ]; then
 	ls -lh "$PROJ_DIR/busybox-component.wasm"
 	echo ""
 	echo "下一步：用 wac 组合 guest component"
-	echo "  wac plug ./busybox-component.wasm --plug ../component-poc/git-guest/git-guest.wasm -o composed-busybox.wasm"
-	echo "  wasmtime run -W exceptions=y ./composed-busybox.wasm wsh -c 'git status'"
+	echo "  wac plug ./busybox-component.wasm --plug ../libgit2/build-component/git-guest.wasm -o composed-busybox.wasm"
+	echo "  wasmtime run -W exceptions=y --dir=/tmp --dir=. ./composed-busybox.wasm wsh -c 'git status'"
 else
 	cp "$PROJ_DIR/busybox" "$PROJ_DIR/busybox.wasm" 2>/dev/null || \
 	cp "$PROJ_DIR/busybox_unstripped" "$PROJ_DIR/busybox.wasm"

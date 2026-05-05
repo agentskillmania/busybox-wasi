@@ -56,3 +56,6 @@ docs/busybox.pod
 .before
 CLAUDE.md
 testsuite/
+
+# Component model generated bindings
+component/host_runner.*
