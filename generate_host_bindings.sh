@@ -10,7 +10,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 WIT_BINDGEN="${WIT_BINDGEN:-wit-bindgen}"
-WIT_DIR="$SCRIPT_DIR/../wit"
+WIT_DIR="$SCRIPT_DIR/wit"
 COMPONENT_DIR="$SCRIPT_DIR/component"
 
 if ! command -v "$WIT_BINDGEN" &>/dev/null; then
