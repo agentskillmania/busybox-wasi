@@ -24,8 +24,10 @@
 #include <unistd.h>
 #include "wsh_pipe.h"
 
+#ifdef COMPONENT_MODE
 /* Component Model sub-command interface */
 #include "host_runner.h"
+#endif
 
 /* ===================== BusyBox 外部符号 ===================== */
 
@@ -245,6 +247,7 @@ static int wsh_glob_expand(char *tokens[], int nargs, int max_t)
 	return nout;
 }
 
+#ifdef COMPONENT_MODE
 /* ===================== Component Model Sub-command Dispatch ===================== */
 
 static int wsh_is_subcommand(const char *name)
@@ -271,6 +274,7 @@ static int wsh_dispatch_subcommand(char *tokens[], int nargs)
 	host_runner_list_string_free(&args);
 	return (int)rc;
 }
+#endif
 
 /* ===================== 单命令执行 ===================== */
 
@@ -283,9 +287,11 @@ static int wsh_dispatch_subcommand(char *tokens[], int nargs)
  */
 static int wsh_exec(char *tokens[], int nargs)
 {
+#ifdef COMPONENT_MODE
 	if (wsh_is_subcommand(tokens[0])) {
 		return wsh_dispatch_subcommand(tokens, nargs);
 	}
+#endif
 
 	int no = find_applet_by_name(tokens[0]);
 	if (no < 0) {
