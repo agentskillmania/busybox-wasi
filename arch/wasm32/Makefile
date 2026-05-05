@@ -19,6 +19,11 @@ STRIP = true
 # 头文件和兼容性补丁
 CPPFLAGS += -I$(srctree)/wasi_include -include $(srctree)/wasi/wasi_compat.h
 
+# Component Model subcommand interface
+COMPONENT_POC := $(srctree)/../component-poc
+CPPFLAGS += -I$(COMPONENT_POC)/busybox-host
+EXTRA_LDFLAGS += $(COMPONENT_POC)/busybox-host-src/host_runner.o $(COMPONENT_POC)/busybox-host-src/host_runner_component_type.o
+
 # SjLj 异常处理（wasi-preview2 需要此选项支持 setjmp/longjmp）
 CPPFLAGS += -mllvm -wasm-enable-sjlj -mllvm -wasm-use-legacy-eh=0
 

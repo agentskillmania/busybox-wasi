@@ -24,6 +24,9 @@
 #include <unistd.h>
 #include "wsh_pipe.h"
 
+/* Component Model sub-command interface */
+#include "host_runner.h"
+
 /* ===================== BusyBox 外部符号 ===================== */
 
 extern int find_applet_by_name(const char *name);
@@ -242,6 +245,33 @@ static int wsh_glob_expand(char *tokens[], int nargs, int max_t)
 	return nout;
 }
 
+/* ===================== Component Model Sub-command Dispatch ===================== */
+
+static int wsh_is_subcommand(const char *name)
+{
+	return strcmp(name, "git") == 0
+	    || strcmp(name, "python") == 0
+	    || strcmp(name, "python3") == 0;
+}
+
+static int wsh_dispatch_subcommand(char *tokens[], int nargs)
+{
+	host_runner_list_string_t args = {NULL, 0};
+
+	args.len = (size_t)nargs;
+	args.ptr = malloc(sizeof(host_runner_string_t) * args.len);
+	if (!args.ptr) return 1;
+
+	for (size_t i = 0; i < args.len; i++) {
+		host_runner_string_dup(&args.ptr[i], tokens[i]);
+	}
+
+	int32_t rc = agentskillmania_subcommand_subcommand_execute(&args);
+
+	host_runner_list_string_free(&args);
+	return (int)rc;
+}
+
 /* ===================== 单命令执行 ===================== */
 
 /**
@@ -253,6 +283,10 @@ static int wsh_glob_expand(char *tokens[], int nargs, int max_t)
  */
 static int wsh_exec(char *tokens[], int nargs)
 {
+	if (wsh_is_subcommand(tokens[0])) {
+		return wsh_dispatch_subcommand(tokens, nargs);
+	}
+
 	int no = find_applet_by_name(tokens[0]);
 	if (no < 0) {
 		fprintf(stderr, "wsh: %s: applet not found\n", tokens[0]);
