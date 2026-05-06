@@ -16,7 +16,7 @@
 
 **亮点：**
 
-- **Component Model**：通过 WASI Component Model 与 git（libgit2）和 python（MicroPython）组合。可在 wsh 内直接运行 `git status`、`python "print(42)"`。
+- **Component Model**：通过 WASI Component Model 与 git（libgit2）和 python（MicroPython）组合。可在 wsh 内直接运行 `git status`、`python -c "print(42)"`。
 - **引号保留**：wsh 在管道中保留带引号的参数 — `python -c "import sys; print(1)"` 作为单个参数传递，不会按空格拆分。
 
 ## 快速开始

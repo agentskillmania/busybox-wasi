@@ -253,12 +253,38 @@ bb_run_net() {
 bb_run_wsh() {
     local cmd="$1"
     local tmperr="$_TEST_TMPDIR/_wsh_stderr.txt"
+    local tmpout="$_TEST_TMPDIR/_wsh_stdout.txt"
 
-    _BB_STDOUT=$($WASMTIME $_WASM_FLAGS --dir="$_WASM_DIR" --dir=/tmp \
-        "$BUSYBOX_WASM" wsh -c "$cmd" 2>"$tmperr") && _BB_EXIT=0 || _BB_EXIT=$?
-    # wsh 管道输出到 stderr，合并到 _BB_STDOUT
-    local stderr_out
+    $WASMTIME $_WASM_FLAGS --dir="$_WASM_DIR" --dir=/tmp \
+        "$BUSYBOX_WASM" wsh -c "$cmd" >"$tmpout" 2>"$tmperr" && _BB_EXIT=0 || _BB_EXIT=$?
+    local stdout_raw stderr_out
+    stdout_raw="$(cat "$tmpout" 2>/dev/null)" || stdout_raw=""
     stderr_out="$(cat "$tmperr" 2>/dev/null)" || stderr_out=""
+    _BB_STDOUT="$(printf '%s' "$stdout_raw" | tr -d '\r')"
+    stderr_out="$(printf '%s' "$stderr_out" | tr -d '\r')"
+    if [[ -n "$stderr_out" ]]; then
+        if [[ -n "$_BB_STDOUT" ]]; then
+            _BB_STDOUT="$_BB_STDOUT"$'\n'"$stderr_out"
+        else
+            _BB_STDOUT="$stderr_out"
+        fi
+    fi
+}
+
+# bb_run_net_wsh <命令> — 通过 wsh -c 执行，带网络标志
+# 设置: _BB_EXIT, _BB_STDOUT
+bb_run_net_wsh() {
+    local cmd="$1"
+    local tmperr="$_TEST_TMPDIR/_wsh_stderr.txt"
+    local tmpout="$_TEST_TMPDIR/_wsh_stdout.txt"
+
+    $WASMTIME $_WASM_FLAGS $_WASM_NET_FLAGS --dir="$_WASM_DIR" --dir=/tmp \
+        "$BUSYBOX_WASM" wsh -c "$cmd" >"$tmpout" 2>"$tmperr" && _BB_EXIT=0 || _BB_EXIT=$?
+    local stdout_raw stderr_out
+    stdout_raw="$(cat "$tmpout" 2>/dev/null)" || stdout_raw=""
+    stderr_out="$(cat "$tmperr" 2>/dev/null)" || stderr_out=""
+    _BB_STDOUT="$(printf '%s' "$stdout_raw" | tr -d '\r')"
+    stderr_out="$(printf '%s' "$stderr_out" | tr -d '\r')"
     if [[ -n "$stderr_out" ]]; then
         if [[ -n "$_BB_STDOUT" ]]; then
             _BB_STDOUT="$_BB_STDOUT"$'\n'"$stderr_out"

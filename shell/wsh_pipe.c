@@ -21,6 +21,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <setjmp.h>
+#include <errno.h>
 #include <unistd.h>
 #include "wsh_pipe.h"
 
@@ -292,6 +293,21 @@ static int wsh_dispatch_subcommand(char *tokens[], int nargs)
  */
 static int wsh_exec(char *tokens[], int nargs)
 {
+	/* cd builtin — must change directory in this process */
+	if (strcmp(tokens[0], "cd") == 0) {
+		const char *dir;
+		if (nargs > 1)
+			dir = tokens[1];
+		else
+			dir = getenv("HOME");
+		if (!dir) dir = "/";
+		if (chdir(dir) != 0) {
+			fprintf(stderr, "wsh: cd: %s: %s\n", dir, strerror(errno));
+			return 1;
+		}
+		return 0;
+	}
+
 #ifdef COMPONENT_MODE
 	if (wsh_is_subcommand(tokens[0])) {
 		return wsh_dispatch_subcommand(tokens, nargs);

@@ -241,5 +241,5 @@ Available when built with `./build_wasm.sh` (composes with guest components auto
 
 # Usage
 wasmtime -W exceptions=y --dir=/tmp ./busybox.wasm wsh -c 'git init'
-wasmtime -W exceptions=y --dir=/tmp ./busybox.wasm wsh -c 'python "print(42)"'
+wasmtime -W exceptions=y --dir=/tmp ./busybox.wasm wsh -c 'python -c "print(42)"'
 ```

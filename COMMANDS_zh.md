@@ -241,5 +241,5 @@ wasmtime -W exceptions=y \
 
 # 使用
 wasmtime -W exceptions=y --dir=/tmp ./busybox.wasm wsh -c 'git init'
-wasmtime -W exceptions=y --dir=/tmp ./busybox.wasm wsh -c 'python "print(42)"'
+wasmtime -W exceptions=y --dir=/tmp ./busybox.wasm wsh -c 'python -c "print(42)"'
 ```

@@ -203,7 +203,7 @@ echo hello | tr a-z A-Z | cat
 
 ```bash
 wasmtime -W exceptions=y --dir=/tmp ./busybox.wasm wsh -c 'git init'
-wasmtime -W exceptions=y --dir=/tmp ./busybox.wasm wsh -c 'python "print(42)"'
+wasmtime -W exceptions=y --dir=/tmp ./busybox.wasm wsh -c 'python -c "print(42)"'
 wasmtime -W exceptions=y --dir=/tmp ./busybox.wasm wsh -c 'python -c "import sys; print(sys.version_info[0])"'
 ```
 
