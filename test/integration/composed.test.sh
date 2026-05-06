@@ -7,14 +7,10 @@
 # Prerequisites:
 #   1. bash ../libgit2/build_component.sh
 #   2. bash ../micropython-1.27.0-wasi/ports/wasi/build_component.sh
-#   3. ./build_wasm.sh --component
-#   4. wac plug busybox-component.wasm \
-#        --plug ../libgit2/build-component/git-guest.wasm \
-#        --plug ../micropython-1.27.0-wasi/ports/wasi/build-component/micropython-guest.wasm \
-#        -o composed-busybox.wasm
+#   3. ./build_wasm.sh
 #
 # Usage:
-#   bash test/integration/component.test.sh
+#   bash test/integration/composed.test.sh
 source "$(dirname "$0")/../helper.sh"
 
 # ========================= Composed binary setup =========================
@@ -23,10 +19,10 @@ _PROJ_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
 _WASMTIME="${WASMTIME:-$HOME/bin/wasmtime}"
 _WASM_FLAGS="-W exceptions=y"
 
-_COMPOSED="$_PROJ_ROOT/busybox-wasi/composed-busybox.wasm"
+_COMPOSED="$_PROJ_ROOT/busybox-wasi/busybox.wasm"
 _GIT_GUEST="$_PROJ_ROOT/libgit2/build-component/git-guest.wasm"
 _PY_GUEST="$_PROJ_ROOT/micropython-1.27.0-wasi/ports/wasi/build-component/micropython-guest.wasm"
-_HOST_COMP="$_PROJ_ROOT/busybox-wasi/busybox-component.wasm"
+_HOST_COMP="$_PROJ_ROOT/busybox-wasi/build/busybox-host.wasm"
 
 # Helper: run command through composed binary via wsh
 # Sets: _CO_EXIT, _CO_STDOUT
@@ -76,7 +72,7 @@ fi
 # Build host component if missing
 if [[ ! -f "$_HOST_COMP" ]]; then
 	echo "# Building host component..."
-	bash "$_PROJ_ROOT/busybox-wasi/build_wasm.sh" --component >/dev/null 2>&1
+	bash "$_PROJ_ROOT/busybox-wasi/build_wasm.sh" >/dev/null 2>&1
 fi
 
 # Build git guest if missing

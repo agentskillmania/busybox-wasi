@@ -227,7 +227,7 @@ wasmtime -W exceptions=y \
 
 ## Component Model 子命令
 
-使用 `./build_wasm.sh --component` 构建并与 guest 组件组合后可用：
+使用 `./build_wasm.sh` 构建（自动与 guest 组件组合）：
 
 | 命令 | 状态 | 说明 |
 |------|------|------|
@@ -237,13 +237,9 @@ wasmtime -W exceptions=y \
 
 ```bash
 # 构建并组合
-./build_wasm.sh --component
-wac plug ./busybox-component.wasm \
-  --plug ../libgit2/build-component/git-guest.wasm \
-  --plug ../micropython-1.27.0-wasi/ports/wasi/build-component/micropython-guest.wasm \
-  -o composed-busybox.wasm
+./build_wasm.sh
 
 # 使用
-wasmtime -W exceptions=y --dir=/tmp composed-busybox.wasm wsh -c 'git init'
-wasmtime -W exceptions=y --dir=/tmp composed-busybox.wasm wsh -c 'python "print(42)"'
+wasmtime -W exceptions=y --dir=/tmp ./busybox.wasm wsh -c 'git init'
+wasmtime -W exceptions=y --dir=/tmp ./busybox.wasm wsh -c 'python "print(42)"'
 ```

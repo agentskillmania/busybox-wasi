@@ -227,7 +227,7 @@ wasmtime -W exceptions=y \
 
 ## Component Model Sub-commands
 
-Available when built with `./build_wasm.sh --component` and composed with guest components:
+Available when built with `./build_wasm.sh` (composes with guest components automatically):
 
 | Command | Status | Notes |
 |---------|--------|-------|
@@ -237,13 +237,9 @@ Available when built with `./build_wasm.sh --component` and composed with guest 
 
 ```bash
 # Build and compose
-./build_wasm.sh --component
-wac plug ./busybox-component.wasm \
-  --plug ../libgit2/build-component/git-guest.wasm \
-  --plug ../micropython-1.27.0-wasi/ports/wasi/build-component/micropython-guest.wasm \
-  -o composed-busybox.wasm
+./build_wasm.sh
 
 # Usage
-wasmtime -W exceptions=y --dir=/tmp composed-busybox.wasm wsh -c 'git init'
-wasmtime -W exceptions=y --dir=/tmp composed-busybox.wasm wsh -c 'python "print(42)"'
+wasmtime -W exceptions=y --dir=/tmp ./busybox.wasm wsh -c 'git init'
+wasmtime -W exceptions=y --dir=/tmp ./busybox.wasm wsh -c 'python "print(42)"'
 ```

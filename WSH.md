@@ -199,12 +199,12 @@ Nesting is supported: `$(echo $(echo deep))` works by recursive expansion.
 
 ### Component Model Sub-commands
 
-When built in component mode (`./build_wasm.sh --component`) and composed with git/python guests, wsh dispatches `git`, `python`, and `python3` commands to their respective WASI Component interfaces:
+When built with `./build_wasm.sh` (composes with git/python guests automatically), wsh dispatches `git`, `python`, and `python3` commands to their respective WASI Component interfaces:
 
 ```bash
-wasmtime -W exceptions=y --dir=/tmp composed-busybox.wasm wsh -c 'git init'
-wasmtime -W exceptions=y --dir=/tmp composed-busybox.wasm wsh -c 'python "print(42)"'
-wasmtime -W exceptions=y --dir=/tmp composed-busybox.wasm wsh -c 'python -c "import sys; print(sys.version_info[0])"'
+wasmtime -W exceptions=y --dir=/tmp ./busybox.wasm wsh -c 'git init'
+wasmtime -W exceptions=y --dir=/tmp ./busybox.wasm wsh -c 'python "print(42)"'
+wasmtime -W exceptions=y --dir=/tmp ./busybox.wasm wsh -c 'python -c "import sys; print(sys.version_info[0])"'
 ```
 
 Sub-commands work in pipelines and with I/O redirection, just like built-in applets.

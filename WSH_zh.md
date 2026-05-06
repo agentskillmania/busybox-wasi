@@ -199,12 +199,12 @@ echo hello | tr a-z A-Z | cat
 
 ### Component Model 子命令
 
-以 Component 模式构建（`./build_wasm.sh --component`）并与 git/python guest 组合后，wsh 将 `git`、`python`、`python3` 命令分发到对应的 WASI Component 接口：
+使用 `./build_wasm.sh` 构建（自动与 git/python guest 组合）后，wsh 将 `git`、`python`、`python3` 命令分发到对应的 WASI Component 接口：
 
 ```bash
-wasmtime -W exceptions=y --dir=/tmp composed-busybox.wasm wsh -c 'git init'
-wasmtime -W exceptions=y --dir=/tmp composed-busybox.wasm wsh -c 'python "print(42)"'
-wasmtime -W exceptions=y --dir=/tmp composed-busybox.wasm wsh -c 'python -c "import sys; print(sys.version_info[0])"'
+wasmtime -W exceptions=y --dir=/tmp ./busybox.wasm wsh -c 'git init'
+wasmtime -W exceptions=y --dir=/tmp ./busybox.wasm wsh -c 'python "print(42)"'
+wasmtime -W exceptions=y --dir=/tmp ./busybox.wasm wsh -c 'python -c "import sys; print(sys.version_info[0])"'
 ```
 
 子命令在管道和 I/O 重定向中与内置 applet 一样工作。

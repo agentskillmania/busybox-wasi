@@ -20,14 +20,11 @@ STRIP = true
 CPPFLAGS += -I$(srctree)/wasi_include -include $(srctree)/wasi/wasi_compat.h
 
 # Component Model subcommand interface
-# 设置 COMPONENT_MODE=y 启用组件模型模式（需要 wac 组合后才能运行）
-# 默认关闭：编译为普通 WASI module，可直接用 wasmtime 运行
-ifdef COMPONENT_MODE
+# 始终启用：busybox-wasi 默认以 component 模式构建
 COMPONENT_DIR := $(srctree)/component
 CPPFLAGS += -I$(COMPONENT_DIR)
 EXTRA_LDFLAGS += $(COMPONENT_DIR)/host_runner.o $(COMPONENT_DIR)/host_runner_component_type.o
 CPPFLAGS += -DCOMPONENT_MODE
-endif
 
 # SjLj 异常处理（wasi-preview2 需要此选项支持 setjmp/longjmp）
 CPPFLAGS += -mllvm -wasm-enable-sjlj -mllvm -wasm-use-legacy-eh=0
@@ -48,10 +45,4 @@ CPPFLAGS += -UIP_PKTINFO -UIPV6_PKTINFO
 # -Wno- 警告关闭标志不能放在这里（Makefile.flags 会覆盖 CFLAGS）。
 # 这些标志通过 CONFIG_EXTRA_CFLAGS 追加，在 Makefile.flags 之后生效。
 
-# 链接标志
-# --error-limit=0 显示所有链接错误
-# --wrap=open/read/close 拦截 /dev/urandom 访问，重定向到 wasi:random
-LDFLAGS += -Wl,--error-limit=0
-LDFLAGS += -Wl,--wrap=open -Wl,--wrap=read -Wl,--wrap=write -Wl,--wrap=close
-
-endif # WASI_SDK
+endif

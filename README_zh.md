@@ -56,9 +56,9 @@ cp busybox_unstripped busybox.wasm
 
 ```bash
 # 构建 component（自动组合 git + python，如果可用）
-./build_wasm.sh --component
+./build_wasm.sh
 
-# 输出：composed-busybox.wasm（busybox + git + python）
+# 输出：busybox.wasm（busybox + git + python）
 ```
 
 组合前置条件：
@@ -72,11 +72,11 @@ cp busybox_unstripped busybox.wasm
 
 ```bash
 # 通过 subcommand 调用 git
-wasmtime run -W exceptions=y --dir=/tmp composed-busybox.wasm wsh -c 'git status'
+wasmtime run -W exceptions=y --dir=/tmp ./busybox.wasm wsh -c 'git status'
 
 # 通过 subcommand 调用 python
 wasmtime run -W exceptions=y -S tcp=y -S inherit-network=y --dir=/tmp \
-  composed-busybox.wasm wsh -c 'python print("hello")'
+  ./busybox.wasm wsh -c 'python print("hello")'
 ```
 
 ### 运行（CLI 模式）

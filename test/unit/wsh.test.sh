@@ -1,6 +1,6 @@
 #!/bin/bash
 source "$(dirname "$0")/../helper.sh"
-plan 78
+plan 103
 
 # === 变量赋值和展开 ===
 bb_run_wsh 'X=hello; echo $X'
@@ -309,5 +309,78 @@ is "$_BB_STDOUT" "2" "wsh 算术嵌套命令替换"
 # 空表达式
 bb_run_wsh $'echo $(( ))'
 is "$_BB_STDOUT" "0" "wsh 算术空表达式"
+
+# === wsh → python 集成 ===
+
+bb_run_wsh 'python -c "print(42)"'
+is "$_BB_STDOUT" "42" "wsh python -c print integer"
+
+bb_run_wsh 'python -c "print(1+1)"'
+is "$_BB_STDOUT" "2" "wsh python -c arithmetic"
+
+bb_run_wsh 'python -c "import sys; print(sys.version_info[0])"'
+is "$_BB_STDOUT" "3" "wsh python sys.version_info"
+
+bb_run_wsh 'python -c "import sys; print(len(sys.argv))"'
+is "$_BB_STDOUT" "1" "wsh python single argv"
+
+bb_run_wsh 'python -c "import ssl; print(\"ssl ok\")"'
+is "$_BB_STDOUT" "ssl ok" "wsh python ssl module"
+
+bb_run_wsh 'python -c "import gzip; print(\"gzip ok\")"'
+is "$_BB_STDOUT" "gzip ok" "wsh python gzip module"
+
+bb_run_wsh 'python -c "import asyncio; print(\"asyncio ok\")"'
+is "$_BB_STDOUT" "asyncio ok" "wsh python asyncio module"
+
+bb_run_wsh 'python -c "x=10; print(x*2)"'
+is "$_BB_STDOUT" "20" "wsh python multi-statement"
+
+bb_run_wsh 'python -c "import sys; sys.exit(42)"'
+cmp_ok "$_BB_EXIT" "==" "42" "wsh python exit code propagated"
+
+bb_run_wsh 'python3 -c "print(\"alias works\")"'
+is "$_BB_STDOUT" "alias works" "wsh python3 alias"
+
+bb_run_wsh 'python -c "print(\"hello\")" | cat'
+is "$_BB_STDOUT" "hello" "wsh python through pipe"
+
+bb_run_wsh 'python -c "print(\"test\")" > /tmp/_wsh_py_test.txt; cat /tmp/_wsh_py_test.txt'
+is "$_BB_STDOUT" "test" "wsh python redirect to file"
+
+bb_run_wsh 'python -c "print(100)" | wc -l'
+like "$_BB_STDOUT" "1" "wsh python pipe to wc"
+
+bb_run_wsh 'python -c "raise Exception(\"fail\")"'
+cmp_ok "$_BB_EXIT" "!=" "0" "wsh python exception returns non-zero"
+
+# === wsh → git 集成 ===
+
+bb_run_wsh 'git --version'
+like "$_BB_STDOUT" "git version" "wsh git --version"
+
+bb_run_wsh 'cd /tmp && rm -rf _wsh_git_test && mkdir _wsh_git_test && cd _wsh_git_test && git init'
+like "$_BB_STDOUT" "Initialized\|init" "wsh git init"
+
+bb_run_wsh 'cd /tmp/_wsh_git_test && echo hello > file.txt && git add file.txt && git status'
+like "$_BB_STDOUT" "file.txt" "wsh git add and status"
+
+bb_run_wsh 'cd /tmp/_wsh_git_test && git commit -m "test commit"'
+cmp_ok "$_BB_EXIT" "==" "0" "wsh git commit"
+
+bb_run_wsh 'cd /tmp/_wsh_git_test && git log --oneline'
+like "$_BB_STDOUT" "test commit" "wsh git log"
+
+bb_run_wsh 'cd /tmp/_wsh_git_test && git branch'
+cmp_ok "$_BB_EXIT" "==" "0" "wsh git branch"
+
+bb_run_wsh 'git --version | cat'
+like "$_BB_STDOUT" "git version" "wsh git through pipe"
+
+bb_run_wsh 'cd /tmp/_wsh_git_test && git log --oneline | wc -l'
+cmp_ok "$_BB_EXIT" "==" "0" "wsh git log pipe to wc"
+
+bb_run_wsh 'cd /tmp/_wsh_git_test && git --no-pager log'
+like "$_BB_STDOUT" "test commit" "wsh git log no-pager"
 
 done_testing
