@@ -45,7 +45,34 @@ make ARCH=wasm32 WASI_SDK=$HOME/wasi-sdk SKIP_STRIP=y -j$(nproc)
 cp busybox_unstripped busybox.wasm
 ```
 
-### 运行
+### Component 模式
+
+将 busybox 构建为 WASI Component，可与 git 和 python 子命令组合：
+
+```bash
+# 构建 component（自动组合 git + python，如果可用）
+./build_wasm.sh --component
+
+# 输出：composed-busybox.wasm（busybox + git + python）
+```
+
+组合前置条件：
+- [wac](https://github.com/bytecodealliance/wac)（`cargo install wac-cli`）
+- `../libgit2/build-component/git-guest.wasm`（在 libgit2 目录执行 `./build_component.sh`）
+- `../micropython-1.27.0-wasi/ports/wasi/build-component/micropython-guest.wasm`（在 micropython 目录执行 `./build_component.sh`）
+
+运行组合后的 busybox：
+
+```bash
+# 通过 subcommand 调用 git
+wasmtime run -W exceptions=y --dir=/tmp composed-busybox.wasm wsh -c 'git status'
+
+# 通过 subcommand 调用 python
+wasmtime run -W exceptions=y -S tcp=y -S inherit-network=y --dir=/tmp \
+  composed-busybox.wasm wsh -c 'python print("hello")'
+```
+
+### 运行（CLI 模式）
 
 ```bash
 # 执行任意内置命令

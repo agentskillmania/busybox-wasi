@@ -45,7 +45,34 @@ make ARCH=wasm32 WASI_SDK=$HOME/wasi-sdk SKIP_STRIP=y -j$(nproc)
 cp busybox_unstripped busybox.wasm
 ```
 
-### Run
+### Component Mode
+
+Build busybox as a WASI Component that can compose with git and python subcommands:
+
+```bash
+# Build component (auto-composes with git + python if available)
+./build_wasm.sh --component
+
+# Output: composed-busybox.wasm (busybox + git + python)
+```
+
+Prerequisites for composition:
+- [wac](https://github.com/bytecodealliance/wac) (`cargo install wac-cli`)
+- `../libgit2/build-component/git-guest.wasm` (run `../libgit2/build_component.sh`)
+- `../micropython-1.27.0-wasi/ports/wasi/build-component/micropython-guest.wasm` (run `./build_component.sh`)
+
+Run composed busybox:
+
+```bash
+# git via subcommand
+wasmtime run -W exceptions=y --dir=/tmp composed-busybox.wasm wsh -c 'git status'
+
+# python via subcommand
+wasmtime run -W exceptions=y -S tcp=y -S inherit-network=y --dir=/tmp \
+  composed-busybox.wasm wsh -c 'python print("hello")'
+```
+
+### Run (CLI Mode)
 
 ```bash
 # Run any built-in command

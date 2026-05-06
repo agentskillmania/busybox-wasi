@@ -50,9 +50,35 @@ if [ -n "$COMPONENT_MODE" ]; then
 	echo "=== Host Component 构建完成 ==="
 	ls -lh "$PROJ_DIR/busybox-component.wasm"
 	echo ""
-	echo "下一步：用 wac 组合 guest component"
-	echo "  wac plug ./busybox-component.wasm --plug ../libgit2/build-component/git-guest.wasm -o composed-busybox.wasm"
-	echo "  wasmtime run -W exceptions=y --dir=/tmp --dir=. ./composed-busybox.wasm wsh -c 'git status'"
+
+	# --- Compose with guest components ---
+	echo "=== Composing guest components ==="
+
+	GIT_GUEST="$PROJ_DIR/../libgit2/build-component/git-guest.wasm"
+	MPY_GUEST="$PROJ_DIR/../micropython-1.27.0-wasi/ports/wasi/build-component/micropython-guest.wasm"
+
+	if ! command -v wac &>/dev/null; then
+		echo "Warning: wac not found. Skipping composition."
+		echo "Install wac: cargo install wac-cli"
+	elif [ ! -f "$GIT_GUEST" ]; then
+		echo "Warning: git-guest.wasm not found at $GIT_GUEST"
+		echo "Run: cd ../libgit2 && ./build_component.sh"
+	elif [ ! -f "$MPY_GUEST" ]; then
+		echo "Warning: micropython-guest.wasm not found at $MPY_GUEST"
+		echo "Run: cd ../micropython-1.27.0-wasi/ports/wasi && ./build_component.sh"
+	else
+		echo "Composing busybox + git + python ..."
+		wac plug "$PROJ_DIR/busybox-component.wasm" \
+			--plug "$GIT_GUEST" \
+			--plug "$MPY_GUEST" \
+			-o "$PROJ_DIR/composed-busybox.wasm"
+		echo ""
+		echo "=== Composition complete ==="
+		ls -lh "$PROJ_DIR/composed-busybox.wasm"
+		echo ""
+		echo "Run: wasmtime run -W exceptions=y --dir=/tmp ./composed-busybox.wasm wsh -c 'git status'"
+		echo "Run: wasmtime run -W exceptions=y --dir=/tmp ./composed-busybox.wasm wsh -c 'python print(\"hello\")'"
+	fi
 else
 	cp "$PROJ_DIR/busybox" "$PROJ_DIR/busybox.wasm" 2>/dev/null || \
 	cp "$PROJ_DIR/busybox_unstripped" "$PROJ_DIR/busybox.wasm"
