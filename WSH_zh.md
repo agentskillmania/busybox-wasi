@@ -181,6 +181,7 @@ echo hello | tr a-z A-Z | cat
 | `$?` 退出码 | 支持 | |
 | `$$` 伪 PID | 支持 | 返回固定数字 |
 | `;` 命令分隔 | 支持 | |
+| Component 子命令 | 支持 | `git`、`python`/`python3` 通过 WASI Component Model |
 
 ## 已知限制
 
@@ -196,13 +197,25 @@ echo hello | tr a-z A-Z | cat
 | `echo -e` 在管道中 | `\n` 在 wsh 管道数据中不会展开 |
 | 交互模式 | 仅支持 `-c CMD` 模式 |
 
+### Component Model 子命令
+
+以 Component 模式构建（`./build_wasm.sh --component`）并与 git/python guest 组合后，wsh 将 `git`、`python`、`python3` 命令分发到对应的 WASI Component 接口：
+
+```bash
+wasmtime -W exceptions=y --dir=/tmp composed-busybox.wasm wsh -c 'git init'
+wasmtime -W exceptions=y --dir=/tmp composed-busybox.wasm wsh -c 'python "print(42)"'
+wasmtime -W exceptions=y --dir=/tmp composed-busybox.wasm wsh -c 'python -c "import sys; print(sys.version_info[0])"'
+```
+
+子命令在管道和 I/O 重定向中与内置 applet 一样工作。
+
 ### 行为说明
 
-- **引号处理**：`echo 'hello'` 输出 `'hello'`（带引号）。单引号在变量展开时未剥离。双引号*会*剥离。变通方案是尽量避免使用单引号：
+- **引号处理**：双引号参数在管道中作为单个 argv 条目保留。`echo "a b c" | wc -w` 输出 `3`（而非 `1`）。单引号原样传递——需要多词参数时请使用双引号：
   ```bash
   echo hello world          # 正常工作（简单词不需要引号）
-  echo $VAR                 # 变量展开无需引号
-  echo "hello $VAR"         # 双引号会剥离，变量正常展开
+  echo "hello world"        # 作为单个参数在管道中保留
+  python -c "import sys; print(1)"  # -c 获得单个参数，不按空格拆分
   ```
 - **多行管道数据**：包含换行的数据，先写入文件，再从文件管道读取。
 - **管道输出到 stderr**：管道最后阶段写入 stderr。正常使用时不可见，但重定向 stderr 时可能需要注意。
@@ -229,13 +242,14 @@ echo hello | tr a-z A-Z | cat
 Token：[X=hello] [;] [echo] [$X] [|] [tr] [a-z] [A-Z]
   │
   ▼ wsh_parse_list()
-  ├── wsh_exec_segment("X=hello")
+  ├── wsh_exec_segment(tokens[0..0])
   │     └── wsh_try_assign() → 设置 X=hello
   │
-  └── wsh_exec_segment("echo $X | tr a-z A-Z")
-        └── wsh_run_pipeline()
-              ├── 展开："echo hello | tr a-z A-Z"
-              ├── 按 | 分割：["echo hello", "tr a-z A-Z"]
+  └── wsh_exec_segment(tokens[2..6])
+        ├── 按 PIPE token 拆分：[echo,$X] | [tr,a-z,A-Z]
+        ├── 逐个展开 token：[echo] [hello] | [tr] [a-z] [A-Z]
+        ├── 为每个段构建 argv
+        └── wsh_run_pipeline_segs()
               ├── 阶段 0：echo hello → /tmp/_wsh_p_0
               └── 阶段 1：tr a-z A-Z ← /tmp/_wsh_p_0 → stderr
 ```

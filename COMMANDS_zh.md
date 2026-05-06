@@ -15,6 +15,7 @@
 
 - **79 个命令** 完全可用（✅）
 - **22 个命令** 有使用限制（⚠️）
+- **3 个命令** 通过 Component Model 可用（git、python、python3）——需要组合后的二进制文件
 
 ---
 
@@ -220,4 +221,29 @@ wasmtime -W exceptions=y \
 
 | 命令 | 状态 | 说明 |
 |------|------|------|
-| `wsh` | ✅ | 自定义 WASM shell。支持变量、管道、if/for/while/case、`$((...))` 算术、`#` 注释、多行脚本。无 fork/exec、无函数、无作业控制。详见 [WSH_zh.md](WSH_zh.md) |
+| `wsh` | ✅ | 自定义 WASM shell。支持变量、管道、if/for/while/case、`$((...))` 算术、`#` 注释、多行脚本。双引号参数在管道中作为单个 argv 条目保留。无 fork/exec、无函数、无作业控制。详见 [WSH_zh.md](WSH_zh.md) |
+
+---
+
+## Component Model 子命令
+
+使用 `./build_wasm.sh --component` 构建并与 guest 组件组合后可用：
+
+| 命令 | 状态 | 说明 |
+|------|------|------|
+| `git` | ✅ | 基于 libgit2 的完整 git。支持 init、status、add、commit、log、branch、diff 等。需要 git-guest 组件 |
+| `python` | ✅ | MicroPython。支持 `python -c "CODE"` 和 `python "CODE"`。需要 python-guest 组件 |
+| `python3` | ✅ | `python` 的别名 |
+
+```bash
+# 构建并组合
+./build_wasm.sh --component
+wac plug ./busybox-component.wasm \
+  --plug ../libgit2/build-component/git-guest.wasm \
+  --plug ../micropython-1.27.0-wasi/ports/wasi/build-component/micropython-guest.wasm \
+  -o composed-busybox.wasm
+
+# 使用
+wasmtime -W exceptions=y --dir=/tmp composed-busybox.wasm wsh -c 'git init'
+wasmtime -W exceptions=y --dir=/tmp composed-busybox.wasm wsh -c 'python "print(42)"'
+```

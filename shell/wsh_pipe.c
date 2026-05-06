@@ -269,7 +269,12 @@ static int wsh_dispatch_subcommand(char *tokens[], int nargs)
 		host_runner_string_dup(&args.ptr[i], tokens[i]);
 	}
 
-	int32_t rc = agentskillmania_subcommand_subcommand_execute(&args);
+	int32_t rc;
+	if (strcmp(tokens[0], "git") == 0) {
+		rc = agentskillmania_subcommand_git_execute(&args);
+	} else {
+		rc = agentskillmania_subcommand_python_execute(&args);
+	}
 
 	host_runner_list_string_free(&args);
 	return (int)rc;
@@ -517,10 +522,208 @@ static void wsh_redir_free(struct wsh_redir *r)
 	r->out_path = r->in_path = r->err_path = NULL;
 }
 
+/** Capture mode flag: set by wsh_capture_output, checked by pipeline execution */
+static int g_capturing;
+
+/* ===================== Token-array redir parsing ===================== */
+
+/**
+ * Parse redirection operators from argv, removing redir tokens in-place.
+ * Supports: >, >>, <, 2>, 2>>
+ * Returns new argc after removing redir tokens.
+ */
+int wsh_parse_redir_tokens(char *tokens[], int nargs,
+				   struct wsh_seg_redir *redir)
+{
+	redir->out_path = NULL;
+	redir->out_append = 0;
+	redir->in_path = NULL;
+	redir->err_path = NULL;
+
+	int out = 0;
+	for (int i = 0; i < nargs; i++) {
+		/* 2> or 2>> */
+		if (strcmp(tokens[i], "2>") == 0 ||
+		    strcmp(tokens[i], "2>>") == 0) {
+			int append = (tokens[i][2] == '>');
+			if (i + 1 < nargs) {
+				free(redir->err_path);
+				redir->err_path = strdup(tokens[++i]);
+				redir->out_append = append;
+			}
+			continue;
+		}
+		/* >> */
+		if (strcmp(tokens[i], ">>") == 0) {
+			if (i + 1 < nargs) {
+				free(redir->out_path);
+				redir->out_path = strdup(tokens[++i]);
+				redir->out_append = 1;
+			}
+			continue;
+		}
+		/* > */
+		if (strcmp(tokens[i], ">") == 0) {
+			if (i + 1 < nargs) {
+				free(redir->out_path);
+				redir->out_path = strdup(tokens[++i]);
+				redir->out_append = 0;
+			}
+			continue;
+		}
+		/* < */
+		if (strcmp(tokens[i], "<") == 0) {
+			if (i + 1 < nargs) {
+				free(redir->in_path);
+				redir->in_path = strdup(tokens[++i]);
+			}
+			continue;
+		}
+		tokens[out++] = tokens[i];
+	}
+	tokens[out] = NULL;
+	return out;
+}
+
+void wsh_seg_redir_free(struct wsh_seg_redir *r)
+{
+	free(r->out_path);
+	free(r->in_path);
+	free(r->err_path);
+	r->out_path = r->in_path = r->err_path = NULL;
+}
+
+/* ===================== Token-array pipeline execution ===================== */
+
+int wsh_run_pipeline_segs(struct wsh_pipeline_seg *segs, int nseg)
+{
+	/* Single command (no pipe) */
+	if (nseg == 1) {
+		struct wsh_pipeline_seg *s = &segs[0];
+
+		/* Input redirection */
+		if (s->redir.in_path)
+			freopen(s->redir.in_path, "r", stdin);
+
+		if (g_capturing) {
+			if (s->redir.out_path)
+				freopen(s->redir.out_path,
+					s->redir.out_append ? "a" : "w", stdout);
+			if (s->redir.err_path)
+				freopen(s->redir.err_path, "w", stderr);
+
+			int rc = wsh_exec(s->argv, s->argc);
+			fflush(stdout);
+			return rc;
+		}
+
+		int redirected_out = (s->redir.out_path != NULL);
+		char out_path[256];
+		if (redirected_out) {
+			freopen(s->redir.out_path,
+				s->redir.out_append ? "a" : "w", stdout);
+		} else {
+			wsh_tmp_path(out_path, sizeof(out_path), 0);
+			if (freopen(out_path, "w", stdout) == NULL) {
+				fprintf(stderr, "wsh: cannot open pipe output\n");
+				return 1;
+			}
+		}
+
+		if (s->redir.err_path)
+			freopen(s->redir.err_path, "w", stderr);
+
+		int rc = wsh_exec(s->argv, s->argc);
+		fflush(stdout);
+
+		if (!redirected_out) {
+			char *result = NULL;
+			size_t rlen = 0;
+			if (wsh_read_file(out_path, &result, &rlen) == 0
+			    && result) {
+				write(STDERR_FILENO, result, rlen);
+				free(result);
+			}
+			remove(out_path);
+		}
+		return rc;
+	}
+
+	/* Multi-segment pipeline */
+	int rc = 0;
+	int last_redirected = 0;
+
+	for (int i = 0; i < nseg; i++) {
+		struct wsh_pipeline_seg *s = &segs[i];
+
+		if (s->redir.in_path) {
+			if (freopen(s->redir.in_path, "r", stdin) == NULL) {
+				fprintf(stderr, "wsh: cannot open %s\n",
+					s->redir.in_path);
+				rc = 1;
+				goto done;
+			}
+		} else if (i > 0) {
+			char in_path[256];
+			wsh_tmp_path(in_path, sizeof(in_path), i - 1);
+			if (freopen(in_path, "r", stdin) == NULL) {
+				fprintf(stderr, "wsh: cannot open pipe input\n");
+				rc = 1;
+				goto done;
+			}
+		}
+
+		if (i == nseg - 1 && s->redir.out_path) {
+			last_redirected = 1;
+			if (freopen(s->redir.out_path,
+				    s->redir.out_append ? "a" : "w",
+				    stdout) == NULL) {
+				fprintf(stderr, "wsh: cannot open %s\n",
+					s->redir.out_path);
+				rc = 1;
+				goto done;
+			}
+		} else {
+			char out_path[256];
+			wsh_tmp_path(out_path, sizeof(out_path), i);
+			if (freopen(out_path, "w", stdout) == NULL) {
+				fprintf(stderr, "wsh: cannot open pipe output\n");
+				rc = 1;
+				goto done;
+			}
+		}
+
+		if (s->redir.err_path)
+			freopen(s->redir.err_path, "w", stderr);
+
+		rc = wsh_exec(s->argv, s->argc);
+		fflush(stdout);
+
+		if (i > 0 && !s->redir.in_path) {
+			char in_path[256];
+			wsh_tmp_path(in_path, sizeof(in_path), i - 1);
+			remove(in_path);
+		}
+	}
+
+	if (!last_redirected) {
+		char out_path[256];
+		wsh_tmp_path(out_path, sizeof(out_path), nseg - 1);
+		char *result = NULL;
+		size_t rlen = 0;
+		if (wsh_read_file(out_path, &result, &rlen) == 0 && result) {
+			write(STDERR_FILENO, result, rlen);
+			free(result);
+		}
+		remove(out_path);
+	}
+
+done:
+	return rc;
+}
+
 /* ===================== 管道执行主函数 ===================== */
 
-/** 捕获模式标志：wsh_capture_output 设置，wsh_run_pipeline 检查 */
-static int g_capturing;
 
 int wsh_run_pipeline(const char *cmdline)
 {

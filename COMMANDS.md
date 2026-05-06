@@ -15,6 +15,7 @@
 
 - **79 commands** work fully (✅)
 - **22 commands** have limitations (⚠️)
+- **3 commands** available via Component Model (git, python, python3) — require composed binary
 
 ---
 
@@ -220,4 +221,29 @@ wasmtime -W exceptions=y \
 
 | Command | Status | Notes |
 |---------|--------|-------|
-| `wsh` | ✅ | Custom WASM shell. Supports variables, pipelines, if/for/while/case, `$((...))` arithmetic, `#` comments, multi-line scripts. No fork/exec, no functions, no job control. See [WSH.md](WSH.md) |
+| `wsh` | ✅ | Custom WASM shell. Supports variables, pipelines, if/for/while/case, `$((...))` arithmetic, `#` comments, multi-line scripts. Double-quoted args preserved as single argv entries across pipes. No fork/exec, no functions, no job control. See [WSH.md](WSH.md) |
+
+---
+
+## Component Model Sub-commands
+
+Available when built with `./build_wasm.sh --component` and composed with guest components:
+
+| Command | Status | Notes |
+|---------|--------|-------|
+| `git` | ✅ | Full git via libgit2. Supports init, status, add, commit, log, branch, diff, etc. Requires git-guest component |
+| `python` | ✅ | MicroPython. Supports `python -c "CODE"` and `python "CODE"`. Requires python-guest component |
+| `python3` | ✅ | Alias for `python` |
+
+```bash
+# Build and compose
+./build_wasm.sh --component
+wac plug ./busybox-component.wasm \
+  --plug ../libgit2/build-component/git-guest.wasm \
+  --plug ../micropython-1.27.0-wasi/ports/wasi/build-component/micropython-guest.wasm \
+  -o composed-busybox.wasm
+
+# Usage
+wasmtime -W exceptions=y --dir=/tmp composed-busybox.wasm wsh -c 'git init'
+wasmtime -W exceptions=y --dir=/tmp composed-busybox.wasm wsh -c 'python "print(42)"'
+```

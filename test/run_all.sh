@@ -16,6 +16,7 @@ set -euo pipefail
 PROJ_ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 TEST_DIR="$PROJ_ROOT/test"
 UNIT_DIR="$TEST_DIR/unit"
+INTG_DIR="$TEST_DIR/integration"
 
 # 分类映射（bash 3.2 兼容：用函数代替关联数组）
 _cat_cmds() {
@@ -26,6 +27,7 @@ _cat_cmds() {
         network)   echo "wget nc telnet nslookup ftpget ftpput tcpsvd udpsvd whois" ;;
         calc)      echo "bc dc" ;;
         shell)     echo "wsh" ;;
+        integration) echo "component" ;;
         editors)   echo "vi ed" ;;
         misc)      echo "pipe_progress run_parts chroot" ;;
         *)         echo "" ;;
@@ -52,35 +54,47 @@ discover_tests() {
         return
     fi
 
-    local arg="$1"; shift
-    case "$arg" in
-        --list)
-            find "$UNIT_DIR" -name '*.test.sh' 2>/dev/null | sort | while read -r f; do
-                basename "$f" .test.sh
-            done
-            exit 0
-            ;;
-        --category)
-            for cat in "$@"; do
+    local arg="$1"
+    if [[ "$arg" == "--category" ]]; then
+        shift
+        for cat in "$@"; do
+            if [[ "$cat" == "integration" ]]; then
+                find "$INTG_DIR" -name '*.test.sh' 2>/dev/null | sort
+            else
                 local cmds
                 cmds="$(_cat_cmds "$cat")"
                 for cmd in $cmds; do
                     local tf="$UNIT_DIR/${cmd}.test.sh"
                     [[ -f "$tf" ]] && echo "$tf"
                 done
+            fi
+        done
+        return
+    fi
+
+    local arg2="$1"; shift
+    case "$arg2" in
+        --list)
+            find "$UNIT_DIR" "$INTG_DIR" -name '*.test.sh' 2>/dev/null | sort | while read -r f; do
+                basename "$f" .test.sh
             done
+            exit 0
             ;;
         *)
-            # 单个命令名或文件路径
-            for name in "$arg" "$@"; do
+            # single command name or file path
+            for name in "$arg2" "$@"; do
                 if [[ -f "$name" ]]; then
                     echo "$name"
+                elif [[ -f "$INTG_DIR/$name" ]]; then
+                    echo "$INTG_DIR/$name"
+                elif [[ -f "$INTG_DIR/${name}.test.sh" ]]; then
+                    echo "$INTG_DIR/${name}.test.sh"
                 elif [[ -f "$UNIT_DIR/$name" ]]; then
                     echo "$UNIT_DIR/$name"
                 elif [[ -f "$UNIT_DIR/${name}.test.sh" ]]; then
                     echo "$UNIT_DIR/${name}.test.sh"
                 else
-                    echo "ERROR: 测试未找到: $name" >&2
+                    echo "ERROR: test not found: $name" >&2
                     exit 1
                 fi
             done

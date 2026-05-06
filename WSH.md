@@ -181,6 +181,7 @@ Nesting is supported: `$(echo $(echo deep))` works by recursive expansion.
 | `$?` exit code | Supported | |
 | `$$` pseudo PID | Supported | Returns fixed number |
 | `;` command separator | Supported | |
+| Component sub-commands | Supported | `git`, `python`/`python3` via WASI Component Model |
 
 ## Known Limitations
 
@@ -196,13 +197,25 @@ Nesting is supported: `$(echo $(echo deep))` works by recursive expansion.
 | `echo -e` in pipes | `\n` not expanded inside wsh pipe data |
 | Interactive mode | Only `-c CMD` mode supported |
 
+### Component Model Sub-commands
+
+When built in component mode (`./build_wasm.sh --component`) and composed with git/python guests, wsh dispatches `git`, `python`, and `python3` commands to their respective WASI Component interfaces:
+
+```bash
+wasmtime -W exceptions=y --dir=/tmp composed-busybox.wasm wsh -c 'git init'
+wasmtime -W exceptions=y --dir=/tmp composed-busybox.wasm wsh -c 'python "print(42)"'
+wasmtime -W exceptions=y --dir=/tmp composed-busybox.wasm wsh -c 'python -c "import sys; print(sys.version_info[0])"'
+```
+
+Sub-commands work in pipelines and with I/O redirection, just like built-in applets.
+
 ### Behavioral Notes
 
-- **Quote handling**: `echo 'hello'` outputs `'hello'` (with quotes). Single quotes are not stripped during variable expansion. Double quotes *are* stripped. As a workaround, avoid single quotes when possible:
+- **Quote handling**: Double-quoted arguments are preserved as single argv entries across pipelines. `echo "a b c" | wc -w` outputs `3` (not `1`). Single quotes are passed through literally — use double quotes when you need multi-word arguments:
   ```bash
   echo hello world          # Works fine (no quotes needed for simple words)
-  echo $VAR                 # Variables expand without quotes
-  echo "hello $VAR"         # Double quotes are stripped, variables expand
+  echo "hello world"        # Preserved as one argument through pipes
+  python -c "import sys; print(1)"  # -c gets one argument, not split on spaces
   ```
 - **Multi-line pipe data**: For data containing newlines, write to a file first, then pipe from the file.
 - **Pipeline output goes to stderr**: The final stage of a pipeline writes to stderr. This is invisible for normal usage but may matter if you redirect stderr.
@@ -229,13 +242,14 @@ Input: 'X=hello; echo $X | tr a-z A-Z'
 Tokens: [X=hello] [;] [echo] [$X] [|] [tr] [a-z] [A-Z]
   │
   ▼ wsh_parse_list()
-  ├── wsh_exec_segment("X=hello")
+  ├── wsh_exec_segment(tokens[0..0])
   │     └── wsh_try_assign() → sets X=hello
   │
-  └── wsh_exec_segment("echo $X | tr a-z A-Z")
-        └── wsh_run_pipeline()
-              ├── expand: "echo hello | tr a-z A-Z"
-              ├── split by |: ["echo hello", "tr a-z A-Z"]
+  └── wsh_exec_segment(tokens[2..6])
+        ├── Split by PIPE tokens: [echo,$X] | [tr,a-z,A-Z]
+        ├── Expand each token: [echo] [hello] | [tr] [a-z] [A-Z]
+        ├── Build argv per segment
+        └── wsh_run_pipeline_segs()
               ├── stage 0: echo hello → /tmp/_wsh_p_0
               └── stage 1: tr a-z A-Z ← /tmp/_wsh_p_0 → stderr
 ```

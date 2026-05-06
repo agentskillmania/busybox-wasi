@@ -20,6 +20,7 @@ enum {
 	WSH_TOK_SEMI,
 	WSH_TOK_AND,
 	WSH_TOK_OR,
+	WSH_TOK_PIPE,
 	WSH_TOK_LPAREN,
 	WSH_TOK_RPAREN,
 	WSH_TOK_EOF
@@ -68,7 +69,9 @@ static int wsh_tokenize(const char *input, struct wsh_tok *toks, int max)
 		/* 换行符作为隐式命令分隔符 */
 		if (saw_newline && n > 0 && toks[n - 1].type != WSH_TOK_SEMI) {
 			int is_pipe_continuation = 0;
-			if (toks[n - 1].type == WSH_TOK_WORD) {
+			if (toks[n - 1].type == WSH_TOK_PIPE) {
+				is_pipe_continuation = 1;
+			} else if (toks[n - 1].type == WSH_TOK_WORD) {
 				const char *p = toks[n - 1].start + toks[n - 1].len - 1;
 				while (p >= toks[n - 1].start &&
 				       (*p == ' ' || *p == '\t'))
@@ -108,6 +111,15 @@ static int wsh_tokenize(const char *input, struct wsh_tok *toks, int max)
 			toks[n].len = 2;
 			toks[n].type = WSH_TOK_OR;
 			n++; i += 2;
+			continue;
+		}
+
+		/* | (single pipe) */
+		if (input[i] == '|') {
+			toks[n].start = &input[i];
+			toks[n].len = 1;
+			toks[n].type = WSH_TOK_PIPE;
+			n++; i++;
 			continue;
 		}
 
@@ -156,6 +168,7 @@ static int wsh_tokenize(const char *input, struct wsh_tok *toks, int max)
 			}
 			if (input[i] == ' ' || input[i] == '\t' ||
 			    input[i] == '\n' || input[i] == ';' ||
+			    input[i] == '|' ||
 			    input[i] == '(' || input[i] == ')' ||
 			    input[i] == '&')
 				break;
@@ -266,27 +279,142 @@ static int wsh_parse_list(const struct wsh_tok *toks, int pos, int end);
 
 /* ===================== 简单命令执行 ===================== */
 
+/** Expand each word token individually, returning expanded string array */
+static char **expand_tokens(const struct wsh_tok *toks, int start, int end,
+			    int *out_n)
+{
+	int n = end - start;
+	char **exp = malloc(sizeof(char *) * (n + 1));
+	if (!exp) { *out_n = 0; return NULL; }
+
+	int j = 0;
+	for (int i = start; i < end; i++) {
+		if (toks[i].type != WSH_TOK_WORD)
+			continue;
+		char *raw = tok_dup(&toks[i]);
+		char *s = wsh_expand(raw);
+		free(raw);
+		if (s && *s)
+			exp[j++] = s;
+		else
+			free(s);
+	}
+	exp[j] = NULL;
+	*out_n = j;
+	return exp;
+}
+
+/** Check if a single expanded token is an assignment (NAME=VALUE) */
+static int tok_is_assign(const char *s)
+{
+	if (!*s || (!isalpha((unsigned char)*s) && *s != '_'))
+		return 0;
+
+	const char *p = s;
+	while (*p && (isalnum((unsigned char)*p) || *p == '_'))
+		p++;
+
+	if (*p != '=' || *(p + 1) == '=')
+		return 0;
+
+	/* Value part must have no spaces (already true since it's one token) */
+	const char *val = p + 1;
+	while (*val) {
+		if (*val == ' ' || *val == '\t')
+			return 0;
+		val++;
+	}
+
+	int name_len = (int)(p - s);
+	char name[256];
+	if (name_len >= (int)sizeof(name))
+		return 0;
+	memcpy(name, s, name_len);
+	name[name_len] = '\0';
+
+	wsh_var_set(name, p + 1);
+	return 1;
+}
+
 /**
- * 执行一个简单命令段。
- * 重建字符串 → 展开变量 → 赋值检测 → 管道执行。
+ * Execute a simple command segment using token arrays (no string round-trip).
+ * Splits by PIPE tokens, expands tokens individually, builds argv per segment,
+ * then calls wsh_run_pipeline_segs().
  */
 static int wsh_exec_segment(const struct wsh_tok *toks, int start, int end)
 {
-	char *raw = toks_to_str(toks, start, end);
-	if (!raw || !*raw) { free(raw); return 0; }
+	/* Count pipe segments */
+	int nseg = 1;
+	for (int i = start; i < end; i++) {
+		if (toks[i].type == WSH_TOK_PIPE)
+			nseg++;
+	}
 
-	char *expanded = wsh_expand(raw);
-	free(raw);
-	if (!expanded) return 0;
+	/* Collect segment token ranges */
+	struct {
+		int start, end;
+	} ranges[64];
+	int ri = 0;
+	ranges[0].start = start;
+	ranges[0].end = start;
+	for (int i = start; i < end; i++) {
+		if (toks[i].type == WSH_TOK_PIPE) {
+			ranges[ri].end = i;
+			ri++;
+			ranges[ri].start = i + 1;
+			ranges[ri].end = i + 1;
+		} else {
+			ranges[ri].end = i + 1;
+		}
+	}
+	nseg = ri + 1;
 
-	if (wsh_try_assign(expanded)) {
-		free(expanded);
+	/* Build pipeline segments */
+	struct wsh_pipeline_seg segs[64];
+	for (int i = 0; i < nseg; i++) {
+		int nargs;
+		char **argv = expand_tokens(toks, ranges[i].start,
+					    ranges[i].end, &nargs);
+		if (!argv || nargs == 0) {
+			free(argv);
+			segs[i].argv = NULL;
+			segs[i].argc = 0;
+			segs[i].redir.out_path = NULL;
+			segs[i].redir.out_append = 0;
+			segs[i].redir.in_path = NULL;
+			segs[i].redir.err_path = NULL;
+			continue;
+		}
+		nargs = wsh_parse_redir_tokens(argv, nargs, &segs[i].redir);
+		segs[i].argv = argv;
+		segs[i].argc = nargs;
+	}
+
+	/* Assignment check: single segment, single expanded token */
+	if (nseg == 1 && segs[0].argc == 1 && segs[0].argv &&
+	    tok_is_assign(segs[0].argv[0])) {
+		free(segs[0].argv[0]);
+		free(segs[0].argv);
 		return 0;
 	}
 
-	int rc = wsh_run_pipeline(expanded);
+	/* Skip empty */
+	if (nseg == 1 && segs[0].argc == 0) {
+		free(segs[0].argv);
+		return 0;
+	}
+
+	int rc = wsh_run_pipeline_segs(segs, nseg);
 	wsh_set_last_exitcode(rc);
-	free(expanded);
+
+	/* Free: only free argv arrays, not individual entries.
+	 * BusyBox applets (e.g. wc) may overwrite argv pointers
+	 * with string literals, making individual free() unsafe. */
+	for (int i = 0; i < nseg; i++) {
+		free(segs[i].argv);
+		wsh_seg_redir_free(&segs[i].redir);
+	}
+
 	return rc;
 }
 

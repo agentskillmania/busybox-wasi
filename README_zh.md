@@ -14,6 +14,11 @@
 
 内置 shell (wsh) 的文档请参阅 [WSH_zh.md](WSH_zh.md)。
 
+**亮点：**
+
+- **Component Model**：通过 WASI Component Model 与 git（libgit2）和 python（MicroPython）组合。可在 wsh 内直接运行 `git status`、`python "print(42)"`。
+- **引号保留**：wsh 在管道中保留带引号的参数 — `python -c "import sys; print(1)"` 作为单个参数传递，不会按空格拆分。
+
 ## 快速开始
 
 ### 依赖
@@ -61,6 +66,8 @@ cp busybox_unstripped busybox.wasm
 - `../libgit2/build-component/git-guest.wasm`（在 libgit2 目录执行 `./build_component.sh`）
 - `../micropython-1.27.0-wasi/ports/wasi/build-component/micropython-guest.wasm`（在 micropython 目录执行 `./build_component.sh`）
 
+组件使用拆分的 WIT 接口（`agentskillmania:subcommand/git` 和 `agentskillmania:subcommand/python`），每个 guest 独立导出自己的接口。
+
 运行组合后的 busybox：
 
 ```bash
@@ -87,6 +94,19 @@ wasmtime -W exceptions=y --dir=/tmp busybox.wasm ls /tmp
 # 使用内置 shell（wsh）
 wasmtime -W exceptions=y --dir=/tmp busybox.wasm wsh -c 'echo hello | tr a-z A-Z'
 ```
+
+## 测试
+
+```bash
+test/run_all.sh                     # 运行全部测试
+test/run_all.sh cat                 # 运行指定命令的测试
+test/run_all.sh --list              # 列出所有可用测试
+test/run_all.sh --category core     # 运行核心工具测试
+test/run_all.sh --category network  # 运行网络测试
+test/run_all.sh --category integration  # 运行 Component Model 集成测试
+```
+
+测试使用 TAP 协议，按 `test/unit/`（逐命令）和 `test/integration/`（Component Model 端到端）组织。
 
 ## 架构
 
@@ -150,6 +170,13 @@ make ARCH=wasm32 WASI_SDK=$HOME/wasi-sdk menuconfig
 | 文件权限 | 忽略 | `chmod`、`fchmod`、`chown` 在 WASM 沙箱中为空操作 |
 
 **能正常工作的命令**：文件操作（cat、cp、mv、rm、ls）、文本处理（grep、sed、awk、sort）、压缩（gzip、bzip2、xz）、校验和（md5sum、sha256sum）、网络（wget、nc）等单进程工具。
+
+## 文档
+
+| 文档 | 英文 | 中文 |
+|------|------|------|
+| 命令参考 | [COMMANDS.md](COMMANDS.md) | [COMMANDS_zh.md](COMMANDS_zh.md) |
+| Shell (wsh) | [WSH.md](WSH.md) | [WSH_zh.md](WSH_zh.md) |
 
 ## 许可证
 

@@ -14,6 +14,11 @@ For detailed command-by-command documentation including known limitations, see [
 
 For documentation on the built-in shell (wsh), see [WSH.md](WSH.md).
 
+**Highlights:**
+
+- **Component Model**: Compose with git (libgit2) and python (MicroPython) via WASI Component Model. Run `git status`, `python "print(42)"` natively inside wsh.
+- **Correct quoting**: wsh preserves quoted arguments across pipes — `python -c "import sys; print(1)"` passes as a single argument, not split on spaces.
+
 ## Quick Start
 
 ### Prerequisites
@@ -61,6 +66,8 @@ Prerequisites for composition:
 - `../libgit2/build-component/git-guest.wasm` (run `../libgit2/build_component.sh`)
 - `../micropython-1.27.0-wasi/ports/wasi/build-component/micropython-guest.wasm` (run `./build_component.sh`)
 
+The component uses split WIT interfaces (`agentskillmania:subcommand/git` and `agentskillmania:subcommand/python`) so each guest exports its own interface independently.
+
 Run composed busybox:
 
 ```bash
@@ -93,6 +100,19 @@ wasmtime -W exceptions=y \
   --dir=/tmp busybox.wasm wget --no-check-certificate \
   https://example.com -O /tmp/index.html
 ```
+
+## Testing
+
+```bash
+test/run_all.sh                     # Run all tests
+test/run_all.sh cat                 # Run tests for a specific command
+test/run_all.sh --list              # List all available tests
+test/run_all.sh --category core     # Run core utility tests
+test/run_all.sh --category network  # Run network tests
+test/run_all.sh --category integration  # Run component model integration tests
+```
+
+Tests use TAP protocol and are organized in `test/unit/` (per-command) and `test/integration/` (component model end-to-end).
 
 ## Architecture
 
@@ -127,7 +147,7 @@ The project adds a compatibility layer between BusyBox and the WASI runtime:
 |------|---------|
 | `wasi_main.c` | Entry bridge: `__main_argc_argv` -> `busybox_real_main` |
 | `wasi/wasi_stubs.c` | POSIX function stubs (fork, pipe, signal, etc.) returning `ENOSYS` or safe defaults; `/dev/urandom` simulation; TLS-transparent read/write interception |
-| `wasi/wasi_tls_glue.c` | Inline TLS glue for single-process WASM: makes HTTPS work without fork/socketpair |
+| `wasi/wasi_tls_glue.c` | Inline TLS glue: makes HTTPS work in single-process WASM via `--wrap=read/write` interception |
 | `wasi/wasi_compat.h` | Function declarations patching WASI header gaps |
 | `wasi_include/` | Header files supplementing missing POSIX definitions |
 | `arch/wasm32/Makefile` | Toolchain configuration for WASM build |
@@ -159,6 +179,13 @@ This is a WebAssembly port running in a sandboxed environment. Many POSIX featur
 | Permissions | Ignored | `chmod`, `fchmod`, `chown` are no-ops in the WASM sandbox |
 
 Commands that **work well**: file operations (cat, cp, mv, rm, ls), text processing (grep, sed, awk, sort), compression (gzip, bzip2, xz), checksums (md5sum, sha256sum), networking (wget with HTTPS, nc), and other single-process utilities.
+
+## Documentation
+
+| Document | English | Chinese |
+|----------|---------|---------|
+| Command reference | [COMMANDS.md](COMMANDS.md) | [COMMANDS_zh.md](COMMANDS_zh.md) |
+| Shell (wsh) | [WSH.md](WSH.md) | [WSH_zh.md](WSH_zh.md) |
 
 ## License
 

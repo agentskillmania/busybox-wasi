@@ -1,6 +1,6 @@
 #!/bin/bash
 source "$(dirname "$0")/../helper.sh"
-plan 69
+plan 78
 
 # === 变量赋值和展开 ===
 bb_run_wsh 'X=hello; echo $X'
@@ -80,6 +80,40 @@ is "$_BB_STDOUT" '$X' "wsh 单引号内不展开变量"
 # 双引号内命令替换
 bb_run_wsh 'echo "result: $(echo 42)"'
 is "$_BB_STDOUT" "result: 42" "wsh 双引号内命令替换"
+
+# === 引号 + 管道（引号信息不再丢失） ===
+
+# Quoted arg preserved through pipe (core fix for token-array execution)
+bb_run_wsh 'echo "a b c" | wc -w'
+is "$_BB_STDOUT" "3" "wsh 引号参数穿过管道保持完整"
+
+# Multiple quoted args through pipe
+bb_run_wsh 'echo "hello world" | grep "hello world"'
+is "$_BB_STDOUT" "hello world" "wsh 引号模式匹配穿过管道"
+
+# Three-stage pipe with quoted args
+bb_run_wsh 'echo "hello world" | cat | wc -w'
+is "$_BB_STDOUT" "2" "wsh 三级管道引号参数"
+
+# Pipe + wc ( BusyBox wc overwrites argv, tests safe cleanup)
+bb_run_wsh 'echo hello | wc -c'
+like "$_BB_STDOUT" "6" "wsh 管道 wc 无崩溃"
+
+# Quoted arg to grep
+bb_run_wsh 'echo "test line" | grep "test line"'
+is "$_BB_STDOUT" "test line" "wsh 引号参数 grep 匹配"
+
+# Single-quoted arg through pipe
+bb_run_wsh "echo 'a b c' | wc -w"
+is "$_BB_STDOUT" "3" "wsh 单引号参数穿过管道"
+
+# Quoted arg with semicolon (not split by pipe tokenizer)
+bb_run_wsh 'echo "a;b" | cat'
+is "$_BB_STDOUT" "a;b" "wsh 引号内分号不分割"
+
+# Multiple quoted segments in pipe
+bb_run_wsh 'echo "x y" | cat | sort | wc -l'
+like "$_BB_STDOUT" "1" "wsh 四级管道引号参数"
 
 # === 变量修饰符 ===
 # ${#VAR} 字符串长度
