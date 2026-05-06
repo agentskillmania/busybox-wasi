@@ -977,8 +977,11 @@ void FAST_FUNC run_applet_no_and_exit(int applet_no, const char *name, char **ar
 static NORETURN void run_applet_and_exit(const char *name, char **argv)
 {
 #  if ENABLE_BUSYBOX
-	if (is_prefixed_with(name, "busybox"))
+	if (is_prefixed_with(name, "busybox")
+	 || is_prefixed_with(name, "composed-busybox")
+	) {
 		exit(busybox_main(/*unused:*/ 0, argv));
+	}
 #  endif
 	/* wsh 已通过正式 applet 注册表注册，不再需要硬编码分发 */
 #  if NUM_APPLETS > 0
