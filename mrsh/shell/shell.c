@@ -129,12 +129,14 @@ void mrsh_env_set(struct mrsh_state *state,
 	var->attribs = attribs;
 	struct mrsh_variable *old = mrsh_hashtable_set(&priv->variables, key, var);
 	variable_destroy(old);
+	setenv(key, value, 1);
 }
 
 void mrsh_env_unset(struct mrsh_state *state, const char *key) {
 	struct mrsh_state_priv *priv = state_get_priv(state);
 
 	variable_destroy(mrsh_hashtable_del(&priv->variables, key));
+	unsetenv(key);
 }
 
 const char *mrsh_env_get(struct mrsh_state *state,
