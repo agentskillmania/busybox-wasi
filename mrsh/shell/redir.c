@@ -1,18 +1,16 @@
-#define _POSIX_C_SOURCE 200809L
 #include <errno.h>
 #include <fcntl.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
-#include <sys/param.h>
 #include "shell/redir.h"
 
 static ssize_t write_here_document_line(int fd, struct mrsh_word *line,
 		ssize_t max_size) {
 	char *line_str = mrsh_word_str(line);
 	size_t line_len = strlen(line_str);
-	size_t write_len = line_len + 1; // line + terminating \n
+	size_t write_len = line_len + 1;
 	if (max_size >= 0 && write_len > (size_t)max_size) {
 		free(line_str);
 		return 0;
@@ -38,59 +36,36 @@ err_write:
 }
 
 static int create_here_document_fd(const struct mrsh_array *lines) {
-	int fds[2];
-	if (pipe(fds) != 0) {
-		perror("pipe");
+	/* WASM: write here-document to temp file instead of pipe+fork */
+	char tmpname[64];
+	snprintf(tmpname, sizeof(tmpname), "/tmp/_wsh_heredoc_%d", (int)getpid());
+
+	int fd = open(tmpname, O_CLOEXEC | O_WRONLY | O_CREAT | O_TRUNC, 0644);
+	if (fd < 0) {
+		fprintf(stderr, "cannot create here-document temp file: %s\n",
+			strerror(errno));
 		return -1;
 	}
 
-	// We can write at most PIPE_BUF bytes without blocking. If we want to write
-	// more, we need to fork and continue writing in another process.
-	size_t remaining = PIPE_BUF;
-	bool more = false;
-	size_t i;
-	for (i = 0; i < lines->len; ++i) {
+	for (size_t i = 0; i < lines->len; ++i) {
 		struct mrsh_word *line = lines->data[i];
-		ssize_t n = write_here_document_line(fds[1], line, remaining);
+		ssize_t n = write_here_document_line(fd, line, -1);
 		if (n < 0) {
-			close(fds[0]);
-			close(fds[1]);
+			close(fd);
+			unlink(tmpname);
 			return -1;
-		} else if (n == 0) {
-			more = true;
-			break;
 		}
 	}
+	close(fd);
 
-	if (!more) {
-		// We could write everything into the pipe buffer
-		close(fds[1]);
-		return fds[0];
-	}
-
-	pid_t pid = fork();
-	if (pid < 0) {
-		perror("fork");
-		close(fds[0]);
-		close(fds[1]);
+	fd = open(tmpname, O_CLOEXEC | O_RDONLY);
+	unlink(tmpname);
+	if (fd < 0) {
+		fprintf(stderr, "cannot read here-document temp file: %s\n",
+			strerror(errno));
 		return -1;
-	} else if (pid == 0) {
-		close(fds[0]);
-
-		for (; i < lines->len; ++i) {
-			struct mrsh_word *line = lines->data[i];
-			ssize_t n = write_here_document_line(fds[1], line, -1);
-			if (n < 0) {
-				close(fds[1]);
-				exit(1);
-			}
-		}
-		close(fds[1]);
-		exit(0);
 	}
-
-	close(fds[1]);
-	return fds[0];
+	return fd;
 }
 
 static int parse_fd(const char *str) {
@@ -109,7 +84,6 @@ static int parse_fd(const char *str) {
 }
 
 int process_redir(const struct mrsh_io_redirect *redir, int *redir_fd) {
-	// TODO: filename expansions
 	char *filename = mrsh_word_str(redir->name);
 
 	int fd = -1, default_redir_fd = -1;
@@ -131,12 +105,10 @@ int process_redir(const struct mrsh_io_redirect *redir, int *redir_fd) {
 		default_redir_fd = STDOUT_FILENO;
 		break;
 	case MRSH_IO_LESSAND: // <&
-		// TODO: parse "-"
 		fd = parse_fd(filename);
 		default_redir_fd = STDIN_FILENO;
 		break;
 	case MRSH_IO_GREATAND: // >&
-		// TODO: parse "-"
 		fd = parse_fd(filename);
 		default_redir_fd = STDOUT_FILENO;
 		break;

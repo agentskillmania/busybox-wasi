@@ -5,7 +5,6 @@
 #include <mrsh/buffer.h>
 #include <mrsh/parser.h>
 #include <stdio.h>
-#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -88,59 +87,46 @@ static void swap_words(struct mrsh_word **word_ptr, struct mrsh_word *new_word) 
 static int run_word_command(struct mrsh_context *ctx, struct mrsh_word **word_ptr) {
 	struct mrsh_word_command *wc = mrsh_word_get_command(*word_ptr);
 
-	int fds[2];
-	if (pipe(fds) != 0) {
-		perror("pipe");
+	/* WASM: capture output via temp file, no fork */
+	char tmpname[64];
+	snprintf(tmpname, sizeof(tmpname), "/tmp/_wsh_cmdsub_%d", (int)getpid());
+
+	/* Redirect stdout to temp file */
+	FILE *saved_stdout = stdout;
+	stdout = freopen(tmpname, "w", stdout);
+	if (!stdout) {
+		fprintf(stderr, "wsh: command substitution freopen failed\n");
+		stdout = saved_stdout;
 		return TASK_STATUS_ERROR;
 	}
 
-	pid_t pid = fork();
-	if (pid < 0) {
-		perror("fork");
-		close(fds[0]);
-		close(fds[1]);
-		return TASK_STATUS_ERROR;
-	} else if (pid == 0) {
-		close(fds[0]);
-
-		if (fds[1] != STDOUT_FILENO) {
-			dup2(fds[1], STDOUT_FILENO);
-			close(fds[1]);
-		}
-
-		init_job_child_process(ctx->state);
-
-		// When a subshell is entered, traps that are not being ignored shall
-		// be set to the default actions, except in the case of a command
-		// substitution containing only a single trap command, when the traps
-		// need not be altered.
-		if (!wc->program || !is_print_traps(wc->program)) {
-			reset_caught_traps(ctx->state);
-		}
-
-		if (wc->program != NULL) {
-			mrsh_run_program(ctx->state, wc->program);
-		}
-
-		exit(ctx->state->exit >= 0 ? ctx->state->exit : 0);
+	/* Execute the sub-program */
+	if (wc->program != NULL) {
+		mrsh_run_program(ctx->state, wc->program);
 	}
+	fflush(stdout);
+	fclose(stdout);
 
-	struct mrsh_process *process = process_create(ctx->state, pid);
+	/* Restore stdout from stderr */
+	stdout = fdopen(2, "w");
 
-	close(fds[1]);
-	int child_fd = fds[0];
-
+	/* Read captured output */
+	FILE *f = fopen(tmpname, "r");
 	struct mrsh_buffer buf = {0};
-	if (!buffer_read_from(&buf, child_fd)) {
-		mrsh_buffer_finish(&buf);
-		close(child_fd);
-		return TASK_STATUS_ERROR;
+	if (f) {
+		while (true) {
+			char *dst = mrsh_buffer_reserve(&buf, 1024);
+			ssize_t n = (ssize_t)fread(dst, 1, 1024, f);
+			if (n <= 0) break;
+			buf.len += (size_t)n;
+		}
+		fclose(f);
 	}
-	mrsh_buffer_append_char(&buf, '\0');
-	close(child_fd);
+	unlink(tmpname);
 
-	// Trim newlines at the end
-	ssize_t i = buf.len - 2;
+	/* Trim trailing newlines */
+	mrsh_buffer_append_char(&buf, '\0');
+	ssize_t i = (ssize_t)buf.len - 2;
 	while (i >= 0 && buf.data[i] == '\n') {
 		buf.data[i] = '\0';
 		--i;
@@ -150,7 +136,7 @@ static int run_word_command(struct mrsh_context *ctx, struct mrsh_word **word_pt
 		mrsh_word_string_create(mrsh_buffer_steal(&buf), false);
 	ws->split_fields = true;
 	swap_words(word_ptr, &ws->word);
-	return job_wait_process(process);
+	return ctx->state->last_status;
 }
 
 static const char *parameter_get_value(struct mrsh_state *state,
