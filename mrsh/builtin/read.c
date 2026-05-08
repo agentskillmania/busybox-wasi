@@ -1,4 +1,3 @@
-#define _POSIX_C_SOURCE 200809L
 #include <errno.h>
 #include <mrsh/buffer.h>
 #include <mrsh/shell.h>

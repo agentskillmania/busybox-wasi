@@ -1,5 +1,6 @@
 #ifndef _PWD_H
 #define _PWD_H
+#include <stdio.h>
 struct passwd { char *pw_name; char *pw_passwd; unsigned int pw_uid; unsigned int pw_gid; char *pw_gecos; char *pw_dir; char *pw_shell; };
 struct group { char *gr_name; char *gr_passwd; unsigned int gr_gid; char **gr_mem; };
 static inline struct passwd *getpwuid(unsigned int u) { return NULL; }

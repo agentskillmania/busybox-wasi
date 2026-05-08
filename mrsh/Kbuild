@@ -1,0 +1,19 @@
+lib-y := array.o buffer.o hashtable.o ast.o ast_print.o getopt.o arithm.o
+
+lib-y += parser/parser.o parser/program.o parser/word.o parser/arithm.o
+
+lib-y += shell/shell.o shell/word.o shell/arithm.o shell/path.o \
+         shell/redir.o shell/entry.o shell/process.o shell/job.o shell/trap.o
+
+lib-y += shell/task/task.o shell/task/simple_command.o \
+         shell/task/pipeline.o shell/task/word.o
+
+lib-y += builtin/alias.o builtin/bg.o builtin/break.o builtin/builtin.o \
+         builtin/cd.o builtin/colon.o builtin/command.o builtin/dot.o \
+         builtin/eval.o builtin/exec.o builtin/exit.o builtin/export.o \
+         builtin/false.o builtin/fg.o builtin/getopts.o builtin/hash.o \
+         builtin/jobs.o builtin/pwd.o builtin/read.o builtin/return.o \
+         builtin/set.o builtin/shift.o builtin/times.o builtin/trap.o \
+         builtin/true.o builtin/type.o builtin/ulimit.o builtin/umask.o \
+         builtin/unalias.o builtin/unset.o builtin/unspecified.o \
+         builtin/wait.o

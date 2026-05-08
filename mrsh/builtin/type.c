@@ -1,4 +1,3 @@
-#define _POSIX_C_SOURCE 200809L
 #include <mrsh/builtin.h>
 #include <shell/path.h>
 #include <stdlib.h>

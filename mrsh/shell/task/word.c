@@ -1,4 +1,3 @@
-#define _POSIX_C_SOURCE 200809L
 #include <assert.h>
 #include <errno.h>
 #include <fnmatch.h>
@@ -12,6 +11,16 @@
 #include "shell/process.h"
 #include "shell/task.h"
 #include "shell/word.h"
+
+/* Defined in simple_command.c — when set, run_process skips its own
+ * temp file + stderr output because stdout is already redirected. */
+extern int wsh_stdout_redirected;
+
+/* Capture file for command substitution — pipeline output is appended here. */
+extern const char *wsh_capture_file;
+
+/* Counter for unique temp file names in nested command substitutions */
+static int wsh_cmdsub_counter = 0;
 
 #define READ_SIZE 1024
 
@@ -89,28 +98,39 @@ static int run_word_command(struct mrsh_context *ctx, struct mrsh_word **word_pt
 
 	/* WASM: capture output via temp file, no fork */
 	char tmpname[64];
-	snprintf(tmpname, sizeof(tmpname), "/tmp/_wsh_cmdsub_%d", (int)getpid());
+	int cmd_id = wsh_cmdsub_counter++;
+	snprintf(tmpname, sizeof(tmpname), "/tmp/_wsh_cmdsub_%d_%d",
+		(int)getpid(), cmd_id);
 
 	/* Redirect stdout to temp file */
-	FILE *saved_stdout = stdout;
-	stdout = freopen(tmpname, "w", stdout);
-	if (!stdout) {
+	if (freopen(tmpname, "w", stdout) == NULL) {
 		fprintf(stderr, "wsh: command substitution freopen failed\n");
-		stdout = saved_stdout;
 		return TASK_STATUS_ERROR;
 	}
+
+	/* Save and set redirect state */
+	int prev_redirected = wsh_stdout_redirected;
+	const char *prev_capture = wsh_capture_file;
+	wsh_stdout_redirected = 1;
+	wsh_capture_file = tmpname;
 
 	/* Execute the sub-program */
 	if (wc->program != NULL) {
 		mrsh_run_program(ctx->state, wc->program);
 	}
 	fflush(stdout);
-	fclose(stdout);
 
-	/* Restore stdout from stderr */
-	stdout = fdopen(2, "w");
+	wsh_stdout_redirected = prev_redirected;
+	wsh_capture_file = prev_capture;
 
-	/* Read captured output */
+	/* If we're nested inside another command substitution, restore
+	 * stdout to point at the outer capture file so the outer
+	 * command can continue capturing. */
+	if (prev_capture) {
+		freopen(prev_capture, "a", stdout);
+	}
+
+	/* Read captured output from the temp file */
 	FILE *f = fopen(tmpname, "r");
 	struct mrsh_buffer buf = {0};
 	if (f) {
@@ -546,6 +566,15 @@ static int _run_word(struct mrsh_context *ctx, struct mrsh_word **word_ptr,
 		}
 
 		char *body_str = mrsh_word_str(wa->body);
+		/* Empty expression evaluates to 0 */
+		if (body_str[0] == '\0' || strspn(body_str, " \t") == strlen(body_str)) {
+			struct mrsh_word_string *ws =
+				mrsh_word_string_create(strdup("0"), false);
+			ws->split_fields = true;
+			swap_words(word_ptr, &ws->word);
+			free(body_str);
+			return 0;
+		}
 		struct mrsh_parser *parser =
 			mrsh_parser_with_data(body_str, strlen(body_str));
 		free(body_str);

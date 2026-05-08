@@ -47,28 +47,6 @@ CPPFLAGS += -UIP_PKTINFO -UIPV6_PKTINFO
 
 # mrsh source compilation
 MRSH_DIR := $(srctree)/mrsh
-MRSH_CPPFLAGS := -I$(MRSH_DIR)/include -I$(MRSH_DIR)/include/mrsh
-CPPFLAGS += $(MRSH_CPPFLAGS)
-
-MRSH_PARSER_OBJS := $(MRSH_DIR)/parser/parser.o $(MRSH_DIR)/parser/program.o \
-                      $(MRSH_DIR)/parser/word.o $(MRSH_DIR)/parser/arithm.o
-MRSH_SHELL_OBJS := $(MRSH_DIR)/shell/shell.o $(MRSH_DIR)/shell/word.o \
-                    $(MRSH_DIR)/shell/arithm.o $(MRSH_DIR)/shell/path.o \
-                    $(MRSH_DIR)/shell/redir.o $(MRSH_DIR)/shell/entry.o \
-                    $(MRSH_DIR)/shell/process.o $(MRSH_DIR)/shell/job.o \
-                    $(MRSH_DIR)/shell/trap.o
-MRSH_TASK_OBJS := $(MRSH_DIR)/shell/task/task.o \
-                   $(MRSH_DIR)/shell/task/simple_command.o \
-                   $(MRSH_DIR)/shell/task/pipeline.o \
-                   $(MRSH_DIR)/shell/task/word.o
-MRSH_UTIL_OBJS := $(MRSH_DIR)/array.o $(MRSH_DIR)/buffer.o \
-                   $(MRSH_DIR)/hashtable.o $(MRSH_DIR)/ast.o \
-                   $(MRSH_DIR)/ast_print.o $(MRSH_DIR)/getopt.o \
-                   $(MRSH_DIR)/arithm.o
-MRSH_BUILTIN_OBJS := $(wildcard $(MRSH_DIR)/builtin/*.o)
-
-MRSH_ALL_OBJS := $(MRSH_PARSER_OBJS) $(MRSH_SHELL_OBJS) $(MRSH_TASK_OBJS) \
-                  $(MRSH_UTIL_OBJS) $(MRSH_BUILTIN_OBJS)
-EXTRA_LDFLAGS += $(MRSH_ALL_OBJS)
+CPPFLAGS += -I$(MRSH_DIR)/include -I$(MRSH_DIR)/include/mrsh
 
 endif

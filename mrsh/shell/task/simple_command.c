@@ -34,6 +34,19 @@ static void populate_env_iterator(const char *key, void *_var, void *_) {
 	}
 }
 
+/* Flag: when set, stdout is already redirected by pipeline/word_command.
+ * When clear, run_process handles temp file + stderr output itself.
+ */
+int wsh_stdout_redirected = 0;
+
+/* When non-NULL, run_process and pipeline should write output to this
+ * file instead of stderr. Used by command substitution to capture output
+ * from nested pipelines. */
+const char *wsh_capture_file = NULL;
+
+/* Counter for unique temp file names */
+static int wsh_out_counter = 0;
+
 static int run_process(struct mrsh_context *ctx, struct mrsh_simple_command *sc,
 		char **argv) {
 	struct mrsh_state *state = ctx->state;
@@ -67,6 +80,25 @@ static int run_process(struct mrsh_context *ctx, struct mrsh_simple_command *sc,
 	int argc = 0;
 	while (argv[argc]) argc++;
 
+	int need_capture = !wsh_stdout_redirected;
+	char tmpname[64];
+
+	if (need_capture) {
+		/* WASM: redirect stdout to temp file, then emit via stderr.
+		 * In WASI, freopen() destroys the original stdout fd and it
+		 * cannot be recovered (no dup/dup2). So every standalone
+		 * command captures output to a temp file and writes the
+		 * result to stderr, which remains connected to the terminal.
+		 */
+		snprintf(tmpname, sizeof(tmpname), "/tmp/_wsh_out_%d_%d",
+			(int)getpid(), wsh_out_counter++);
+
+		if (freopen(tmpname, "w", stdout) == NULL) {
+			fprintf(stderr, "wsh: failed to redirect stdout\n");
+			return 1;
+		}
+	}
+
 	/* Save BusyBox global state */
 	const char *saved_applet_name = applet_name;
 	void (*saved_die_func)(void) = die_func;
@@ -85,10 +117,26 @@ static int run_process(struct mrsh_context *ctx, struct mrsh_simple_command *sc,
 		ret = jmp_val & 0xFF;
 	}
 
+	fflush(stdout);
+
 	/* Restore BusyBox global state */
 	applet_name = saved_applet_name;
 	die_func = saved_die_func;
 	xfunc_error_retval = saved_error_retval;
+
+	if (need_capture) {
+		/* Read captured output and emit via stderr */
+		FILE *f = fopen(tmpname, "rb");
+		if (f) {
+			char buf[4096];
+			size_t n;
+			while ((n = fread(buf, 1, sizeof(buf), f)) > 0) {
+				write(STDERR_FILENO, buf, n);
+			}
+			fclose(f);
+		}
+		unlink(tmpname);
+	}
 
 	return ret;
 }
