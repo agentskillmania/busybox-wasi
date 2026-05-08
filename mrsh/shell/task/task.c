@@ -1,9 +1,9 @@
-#define _POSIX_C_SOURCE 200809L
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <fnmatch.h>
 #include <mrsh/ast.h>
+#include <mrsh/hashtable.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,45 +12,75 @@
 #include "shell/task.h"
 #include "shell/trap.h"
 
+/* Subshell deep-copy iterators for WASM (no fork) */
+static void copy_var_iterator(const char *key, void *value, void *user_data) {
+	struct mrsh_variable *src = (struct mrsh_variable *)value;
+	struct mrsh_variable *copy = calloc(1, sizeof(*copy));
+	copy->value = strdup(src->value);
+	copy->attribs = src->attribs;
+	mrsh_hashtable_set((struct mrsh_hashtable *)user_data, key, copy);
+}
+
+static void copy_fn_iterator(const char *key, void *value, void *user_data) {
+	struct mrsh_function *src = (struct mrsh_function *)value;
+	struct mrsh_function *copy = calloc(1, sizeof(*copy));
+	copy->body = src->body;
+	mrsh_hashtable_set((struct mrsh_hashtable *)user_data, key, copy);
+}
+
+static void copy_alias_iterator(const char *key, void *value, void *user_data) {
+	mrsh_hashtable_set((struct mrsh_hashtable *)user_data, key,
+		strdup((const char *)value));
+}
+
+static void destroy_var_iterator(const char *key, void *value, void *user_data) {
+	struct mrsh_variable *var = (struct mrsh_variable *)value;
+	free(var->value);
+	free(var);
+}
+
+static void destroy_fn_iterator(const char *key, void *value, void *user_data) {
+	free(value);
+}
+
+static void destroy_alias_iterator(const char *key, void *value, void *user_data) {
+	free(value);
+}
+
 static int run_subshell(struct mrsh_context *ctx, struct mrsh_array *array) {
 	struct mrsh_state_priv *priv = state_get_priv(ctx->state);
 
-	pid_t pid = fork();
-	if (pid < 0) {
-		perror("fork");
-		return TASK_STATUS_ERROR;
-	} else if (pid == 0) {
-		priv->child = true;
+	struct mrsh_hashtable saved_vars = priv->variables;
+	struct mrsh_hashtable saved_fns = priv->functions;
+	struct mrsh_hashtable saved_aliases = priv->aliases;
+	int saved_status = ctx->state->last_status;
 
-		reset_caught_traps(ctx->state);
+	memset(&priv->variables, 0, sizeof(priv->variables));
+	mrsh_hashtable_for_each(&saved_vars, copy_var_iterator, &priv->variables);
 
-		if (!(ctx->state->options & MRSH_OPT_MONITOR)) {
-			// If job control is disabled, stdin is /dev/null
-			int fd = open("/dev/null", O_CLOEXEC | O_RDONLY);
-			if (fd < 0) {
-				fprintf(stderr, "failed to open /dev/null: %s\n",
-					strerror(errno));
-				exit(1);
-			}
-			if (fd != STDIN_FILENO) {
-				dup2(fd, STDIN_FILENO);
-				close(fd);
-			}
-		}
+	memset(&priv->functions, 0, sizeof(priv->functions));
+	mrsh_hashtable_for_each(&saved_fns, copy_fn_iterator, &priv->functions);
 
-		int ret = run_command_list_array(ctx, array);
-		if (ret < 0) {
-			exit(127);
-		}
+	memset(&priv->aliases, 0, sizeof(priv->aliases));
+	mrsh_hashtable_for_each(&saved_aliases, copy_alias_iterator, &priv->aliases);
 
-		if (ctx->state->exit >= 0) {
-			exit(ctx->state->exit);
-		}
-		exit(ret);
-	}
+	int ret = run_command_list_array(ctx, array);
 
-	struct mrsh_process *proc = process_create(ctx->state, pid);
-	return job_wait_process(proc);
+	mrsh_hashtable_for_each(&priv->variables, destroy_var_iterator, NULL);
+	mrsh_hashtable_finish(&priv->variables);
+
+	mrsh_hashtable_for_each(&priv->functions, destroy_fn_iterator, NULL);
+	mrsh_hashtable_finish(&priv->functions);
+
+	mrsh_hashtable_for_each(&priv->aliases, destroy_alias_iterator, NULL);
+	mrsh_hashtable_finish(&priv->aliases);
+
+	priv->variables = saved_vars;
+	priv->functions = saved_fns;
+	priv->aliases = saved_aliases;
+	ctx->state->last_status = saved_status;
+
+	return ret;
 }
 
 static int run_if_clause(struct mrsh_context *ctx, struct mrsh_if_clause *ic) {
