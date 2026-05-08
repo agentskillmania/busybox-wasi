@@ -341,70 +341,15 @@ int run_and_or_list(struct mrsh_context *ctx, struct mrsh_and_or_list *and_or_li
 	abort();
 }
 
-/**
- * Put the process into its job's process group. This has to be done both in the
- * parent and the child because of potential race conditions.
- */
-static struct mrsh_process *init_async_child(struct mrsh_context *ctx, pid_t pid) {
-	struct mrsh_process *proc = process_create(ctx->state, pid);
-
-	if (ctx->state->options & MRSH_OPT_MONITOR) {
-		job_add_process(ctx->job, proc);
-	}
-
-	return proc;
-}
-
 int run_command_list_array(struct mrsh_context *ctx, struct mrsh_array *array) {
 	struct mrsh_state *state = ctx->state;
-	struct mrsh_state_priv *priv = state_get_priv(state);
 
 	int ret = 0;
 	for (size_t i = 0; i < array->len; ++i) {
 		struct mrsh_command_list *list = array->data[i];
 		if (list->ampersand) {
-			struct mrsh_context child_ctx = *ctx;
-			child_ctx.background = true;
-			if (child_ctx.job == NULL) {
-				child_ctx.job = job_create(state, &list->node);
-			}
-
-			pid_t pid = fork();
-			if (pid < 0) {
-				perror("fork");
-				return TASK_STATUS_ERROR;
-			} else if (pid == 0) {
-				ctx = NULL; // Use child_ctx instead
-				priv->child = true;
-
-				init_async_child(&child_ctx, getpid());
-				if (state->options & MRSH_OPT_MONITOR) {
-					init_job_child_process(state);
-				}
-
-				if (!(state->options & MRSH_OPT_MONITOR)) {
-					// If job control is disabled, stdin is /dev/null
-					int fd = open("/dev/null", O_CLOEXEC | O_RDONLY);
-					if (fd < 0) {
-						fprintf(stderr, "failed to open /dev/null: %s\n",
-							strerror(errno));
-						exit(1);
-					}
-					if (fd != STDIN_FILENO) {
-						dup2(fd, STDIN_FILENO);
-						close(fd);
-					}
-				}
-
-				int ret = run_and_or_list(&child_ctx, list->and_or_list);
-				if (ret < 0) {
-					exit(127);
-				}
-				exit(ret);
-			}
-
-			ret = 0;
-			init_async_child(&child_ctx, pid);
+			/* WASM: no background execution, run synchronously */
+			ret = run_and_or_list(ctx, list->and_or_list);
 		} else {
 			ret = run_and_or_list(ctx, list->and_or_list);
 			if (ret < 0) {
@@ -419,46 +364,8 @@ int run_command_list_array(struct mrsh_context *ctx, struct mrsh_array *array) {
 	return ret;
 }
 
-static void show_job(struct mrsh_job *job, struct mrsh_job *current,
-		struct mrsh_job *previous, bool r) {
-	char curprev = ' ';
-	if (job == current) {
-		curprev = '+';
-	} else if (job == previous) {
-		curprev = '-';
-	}
-	char *cmd = mrsh_node_format(job->node);
-	fprintf(stderr, "[%d] %c %s %s\n", job->job_id, curprev,
-		job_state_str(job, r), cmd);
-	free(cmd);
-}
-
 void mrsh_destroy_terminated_jobs(struct mrsh_state *state) {
-	struct mrsh_state_priv *priv = state_get_priv(state);
-
-	struct mrsh_job *current = job_by_id(state, "%+", false),
-		*previous = job_by_id(state, "%-", false);
-	bool r = rand() % 2 == 0;
-
-	refresh_jobs_status(state);
-
-	for (size_t i = 0; i < priv->jobs.len; ++i) {
-		struct mrsh_job *job = priv->jobs.data[i];
-
-		int status = job_poll(job);
-
-		if (state->options & MRSH_OPT_NOTIFY && job->pending_notification) {
-			show_job(job, current, previous, r);
-			job->pending_notification = false;
-		}
-
-		if (status >= 0) {
-			job_destroy(job);
-			--i;
-		}
-	}
-
-	fflush(stderr);
+	(void)state;
 }
 
 int mrsh_run_program(struct mrsh_state *state, struct mrsh_program *prog) {
