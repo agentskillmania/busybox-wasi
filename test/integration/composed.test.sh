@@ -54,7 +54,7 @@ co_run() {
 
 # ========================= Build & compose =========================
 
-plan 17
+plan 20
 
 setup
 
@@ -175,7 +175,20 @@ like "$_CO_STDOUT" "done" "component: git and python in sequence (python)"
 co_run_wsh 'python -c "print(\"generated\")" > /tmp/gitrepo/gen.txt; git add /tmp/gitrepo/gen.txt'
 cmp_ok "$_CO_EXIT" "==" "0" "component: python output to git add"
 
+# ========================= cwd propagation =========================
+
+# python should see host's cwd
+co_run_wsh 'cd /tmp && python -c "import os; print(os.getcwd())"'
+is "$_CO_STDOUT" "/tmp" "component: python os.getcwd reflects host cwd"
+
+# git should work after cd (no -C needed)
+co_run_wsh 'cd /tmp && git init _cwd_test'
+cmp_ok "$_CO_EXIT" "==" "0" "component: cd /tmp && git init"
+
+co_run_wsh 'cd /tmp/_cwd_test && git status'
+cmp_ok "$_CO_EXIT" "==" "0" "component: cd then git status"
+
 done_testing
 
 # Cleanup
-rm -rf /tmp/gitrepo
+rm -rf /tmp/gitrepo /tmp/_cwd_test

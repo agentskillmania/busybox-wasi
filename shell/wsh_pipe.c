@@ -270,13 +270,22 @@ static int wsh_dispatch_subcommand(char *tokens[], int nargs)
 		host_runner_string_dup(&args.ptr[i], tokens[i]);
 	}
 
+	/* Propagate host's cwd to guest component */
+	char cwd_buf[4096];
+	host_runner_string_t cwd;
+	if (getcwd(cwd_buf, sizeof(cwd_buf)))
+		host_runner_string_dup(&cwd, cwd_buf);
+	else
+		host_runner_string_dup(&cwd, "/");
+
 	int32_t rc;
 	if (strcmp(tokens[0], "git") == 0) {
-		rc = agentskillmania_subcommand_git_execute(&args);
+		rc = agentskillmania_subcommand_git_execute(&cwd, &args);
 	} else {
-		rc = agentskillmania_subcommand_python_execute(&args);
+		rc = agentskillmania_subcommand_python_execute(&cwd, &args);
 	}
 
+	host_runner_string_free(&cwd);
 	host_runner_list_string_free(&args);
 	return (int)rc;
 }

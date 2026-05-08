@@ -5,7 +5,7 @@
 
 source "$(dirname "$0")/../helper.sh"
 
-plan 23
+plan 24
 
 setup
 
@@ -81,7 +81,10 @@ bb_run_wsh 'python -c "x=1; y=2; print(x+y)"'
 is "$_BB_STDOUT" "3" "python multi-statement"
 
 bb_run_wsh 'python -c "import os; print(os.getcwd())"'
-is "$_BB_STDOUT" "/" "python os.getcwd returns root"
+like "$_BB_STDOUT" "/.*" "python os.getcwd returns valid cwd"
+
+bb_run_wsh 'cd /tmp && python -c "import os; print(os.getcwd())"'
+is "$_BB_STDOUT" "/tmp" "python os.getcwd follows cd"
 
 # ==================== python3 别名 ====================
 

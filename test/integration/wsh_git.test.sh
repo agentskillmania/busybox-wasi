@@ -7,7 +7,7 @@
 
 source "$(dirname "$0")/../helper.sh"
 
-plan 19
+plan 20
 
 setup
 
@@ -89,6 +89,11 @@ like "$_BB_STDOUT" "git.*version" "git redirect to file"
 
 bb_run_wsh "git -C $REPO log --oneline > /tmp/_git_log.txt && wc -l /tmp/_git_log.txt"
 cmp_ok "$_BB_EXIT" "==" "0" "git log redirect to file"
+
+# ==================== CWD propagation ====================
+
+bb_run_wsh "cd $REPO && git status"
+cmp_ok "$_BB_EXIT" "==" "0" "git status after cd (cwd propagation)"
 
 # ==================== Cleanup ====================
 
