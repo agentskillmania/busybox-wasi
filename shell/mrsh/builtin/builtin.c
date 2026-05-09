@@ -27,7 +27,7 @@ static const struct builtin builtins[] = {
 	{ "exec", builtin_exec, true },
 	{ "exit", builtin_exit, true },
 	{ "export", builtin_export, true },
-	{ "false", builtin_false, false },
+//	{ "false", builtin_false, false }, // delegate to BusyBox applet
 //	{ "fc", builtin_fc, false },
 	{ "fg", builtin_fg, false },
 	{ "getopts", builtin_getopts, false },
@@ -35,7 +35,7 @@ static const struct builtin builtins[] = {
 	{ "jobs", builtin_jobs, false },
 //	{ "kill", builtin_kill, false },
 //	{ "newgrp", builtin_newgrp, false },
-	{ "pwd", builtin_pwd, false },
+//	{ "pwd", builtin_pwd, false }, // delegate to BusyBox applet
 	{ "read", builtin_read, false },
 	{ "readonly", builtin_export, true },
 	{ "return", builtin_return, true },
@@ -43,10 +43,10 @@ static const struct builtin builtins[] = {
 	{ "shift", builtin_shift, true },
 	{ "times", builtin_times, true },
 	{ "trap", builtin_trap, true },
-	{ "true", builtin_true, false },
+//	{ "true", builtin_true, false }, // delegate to BusyBox applet
 	{ "type", builtin_type, false },
-	{ "ulimit", builtin_ulimit, false },
-	{ "umask", builtin_umask, false },
+//	{ "ulimit", builtin_ulimit, false }, // delegate to BusyBox applet
+//	{ "umask", builtin_umask, false }, // delegate to BusyBox applet
 	{ "unalias", builtin_unalias, false },
 	{ "unset", builtin_unset, true },
 	{ "wait", builtin_wait, false },
