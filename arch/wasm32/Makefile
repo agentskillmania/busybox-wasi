@@ -46,7 +46,7 @@ CPPFLAGS += -UIP_PKTINFO -UIPV6_PKTINFO
 # 这些标志通过 CONFIG_EXTRA_CFLAGS 追加，在 Makefile.flags 之后生效。
 
 # mrsh source compilation
-MRSH_DIR := $(srctree)/mrsh
+MRSH_DIR := $(srctree)/shell/mrsh
 CPPFLAGS += -I$(MRSH_DIR)/include -I$(MRSH_DIR)/include/mrsh
 
 endif
