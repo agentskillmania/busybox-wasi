@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <unistd.h>
 #include "shell/shell.h"
 #include "shell/path.h"
 #include "shell/redir.h"
@@ -21,6 +22,11 @@ extern int (*const applet_main[])(int argc, char **argv);
 extern const char *applet_name;
 extern void (*die_func)(void);
 extern unsigned char xfunc_error_retval;
+
+/* WASM Component Model subcommand dispatch (git/python guests) */
+#ifdef COMPONENT_MODE
+#include "host_runner.h"
+#endif
 
 static jmp_buf wsh_die_jmp;
 static void wsh_die_jump(void) {
@@ -69,21 +75,84 @@ static int run_process(struct mrsh_context *ctx, struct mrsh_simple_command *sc,
 
 	mrsh_hashtable_for_each(&priv->variables, populate_env_iterator, NULL);
 
-	/* Look up BusyBox applet */
-	int idx = find_applet_by_name(argv[0]);
-	if (idx < 0) {
-		fprintf(stderr, "wsh: %s: applet not found\n", argv[0]);
-		return 127;
-	}
-
 	/* Count argc */
 	int argc = 0;
 	while (argv[argc]) argc++;
 
-	int need_capture = !wsh_stdout_redirected;
+	/* Apply I/O redirects from the command (e.g. > file, >> file). */
+	int stdout_redir_fd = -1;
+	for (size_t i = 0; i < sc->io_redirects.len; ++i) {
+		struct mrsh_io_redirect *redir = sc->io_redirects.data[i];
+		int redir_fd;
+		int fd = process_redir(redir, &redir_fd);
+		if (fd < 0) {
+			return TASK_STATUS_ERROR;
+		}
+		if (redir_fd == STDOUT_FILENO) {
+			stdout_redir_fd = fd;
+		} else {
+			if (dup2(fd, redir_fd) < 0) {
+				close(fd);
+				return TASK_STATUS_ERROR;
+			}
+			close(fd);
+		}
+	}
+
+	/* Look up BusyBox applet */
+	int idx = find_applet_by_name(argv[0]);
+	if (idx < 0) {
+#ifdef COMPONENT_MODE
+		/* Fall back to component guest dispatch (git/python) */
+		if (strcmp(argv[0], "git") == 0
+		    || strcmp(argv[0], "python") == 0
+		    || strcmp(argv[0], "python3") == 0) {
+			host_runner_list_string_t cm_args = {NULL, argc};
+			cm_args.ptr = malloc(sizeof(host_runner_string_t) * argc);
+			for (int i = 0; i < argc; i++)
+				host_runner_string_dup(&cm_args.ptr[i], argv[i]);
+
+			host_runner_string_t cwd;
+			char cwd_buf[4096];
+			if (getcwd(cwd_buf, sizeof(cwd_buf)))
+				host_runner_string_dup(&cwd, cwd_buf);
+			else
+				host_runner_string_dup(&cwd, "/");
+
+			/* Apply stdout redirect for guest component */
+			if (stdout_redir_fd >= 0) {
+				fflush(stdout);
+				dup2(stdout_redir_fd, STDOUT_FILENO);
+				close(stdout_redir_fd);
+			}
+
+			int rc;
+			if (strcmp(argv[0], "git") == 0)
+				rc = agentskillmania_subcommand_git_execute(&cwd, &cm_args);
+			else
+				rc = agentskillmania_subcommand_python_execute(&cwd, &cm_args);
+
+			fflush(stdout);
+			host_runner_string_free(&cwd);
+			host_runner_list_string_free(&cm_args);
+			return rc;
+		}
+#endif
+		fprintf(stderr, "wsh: %s: applet not found\n", argv[0]);
+		return 127;
+	}
+
+	int need_capture = !wsh_stdout_redirected && stdout_redir_fd < 0;
 	char tmpname[64];
 
-	if (need_capture) {
+	if (stdout_redir_fd >= 0) {
+		/* Stdout redirected to file */
+		if (dup2(stdout_redir_fd, STDOUT_FILENO) < 0) {
+			close(stdout_redir_fd);
+			return TASK_STATUS_ERROR;
+		}
+		close(stdout_redir_fd);
+	} else if (need_capture) {
 		/* WASM: redirect stdout to temp file, then emit via stderr.
 		 * In WASI, freopen() destroys the original stdout fd and it
 		 * cannot be recovered (no dup/dup2). So every standalone
@@ -99,10 +168,21 @@ static int run_process(struct mrsh_context *ctx, struct mrsh_simple_command *sc,
 		}
 	}
 
+	/* Copy argv so applet's getopt32/mutating argv ops don't
+	 * corrupt our args array. Some applets (wc, head) do
+	 * *--argv = bb_msg_standard_input, replacing our strdup'd
+	 * strings with static pointers that crash on free(). */
+	char **argv_copy = malloc((argc + 1) * sizeof(char *));
+	for (int i = 0; i < argc; i++)
+		argv_copy[i] = argv[i];
+	argv_copy[argc] = NULL;
+
 	/* Save BusyBox global state */
 	const char *saved_applet_name = applet_name;
 	void (*saved_die_func)(void) = die_func;
 	unsigned char saved_error_retval = xfunc_error_retval;
+	extern int optind;
+	optind = 1;
 
 	/* Set up setjmp protection against BusyBox xfunc_die() */
 	die_func = wsh_die_jump;
@@ -112,10 +192,12 @@ static int run_process(struct mrsh_context *ctx, struct mrsh_simple_command *sc,
 	int ret;
 	int jmp_val = setjmp(wsh_die_jmp);
 	if (jmp_val == 0) {
-		ret = applet_main[idx](argc, argv);
+		ret = applet_main[idx](argc, argv_copy);
 	} else {
 		ret = jmp_val & 0xFF;
 	}
+
+	free(argv_copy);
 
 	fflush(stdout);
 

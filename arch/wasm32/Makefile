@@ -45,6 +45,14 @@ CPPFLAGS += -UIP_PKTINFO -UIPV6_PKTINFO
 # -Wno- 警告关闭标志不能放在这里（Makefile.flags 会覆盖 CFLAGS）。
 # 这些标志通过 CONFIG_EXTRA_CFLAGS 追加，在 Makefile.flags 之后生效。
 
+# Linker flags
+# --error-limit=0: show all link errors
+# --wrap=open/read/close: intercept /dev/urandom access for TLS random
+# --wrap=read/write: intercept network I/O for transparent TLS encryption
+LDFLAGS += -Wl,--error-limit=0
+LDFLAGS += -Wl,--wrap=open -Wl,--wrap=read -Wl,--wrap=write -Wl,--wrap=close
+LDFLAGS += -Wl,--max-memory=134217728
+
 # mrsh source compilation
 MRSH_DIR := $(srctree)/shell/mrsh
 CPPFLAGS += -I$(MRSH_DIR)/include -I$(MRSH_DIR)/include/mrsh

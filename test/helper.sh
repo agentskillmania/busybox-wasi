@@ -22,10 +22,10 @@ _PROJ_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 WASMTIME="${WASMTIME:-$HOME/bin/wasmtime}"
 BUSYBOX_WASM="${BUSYBOX_WASM:-$_PROJ_ROOT/busybox.wasm}"
 
-# wasmtime 标志
-_WASM_FLAGS="-W exceptions=y"
-# 网络标志：TCP + UDP + 继承宿主网络 + DNS
-_WASM_NET_FLAGS="-S tcp=y -S udp=y -S inherit-network -S allow-ip-name-lookup=y"
+# wasmtime flags
+_WASM_FLAGS="-W exceptions=y -S cli=y"
+# Network flags: TCP + UDP + inherit host network + DNS
+_WASM_NET_FLAGS="-S cli=y -S tcp=y -S udp=y -S inherit-network -S allow-ip-name-lookup=y"
 
 # TAP 状态
 _TEST_COUNT=0
