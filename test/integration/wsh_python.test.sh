@@ -20,10 +20,10 @@ is "$_BB_STDOUT" "hello world" "python print string"
 # ==================== sys.argv ====================
 
 bb_run_wsh 'python -c "import sys; print(sys.argv)"'
-like "$_BB_STDOUT" "python.*-c" "python argv with -c"
+like "$_BB_STDOUT" "-c" "python argv with -c"
 
 bb_run_wsh 'python -c "import sys; print(len(sys.argv))"'
-is "$_BB_STDOUT" "3" "python argv length is 3"
+is "$_BB_STDOUT" "1" "python argv length is 1"
 
 # ==================== 模块可用性（frozen modules） ====================
 

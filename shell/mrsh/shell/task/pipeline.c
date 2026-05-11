@@ -1,10 +1,14 @@
 /* mrsh/shell/task/pipeline.c — WASM serial pipeline via temp files
  *
- * WASI constraint: after freopen() redirects stdout to a temp file,
- * the original stdout fd is lost and cannot be recovered. Therefore
- * all pipeline stages redirect stdout to temp files, and the final
- * stage's output is emitted via write(STDERR_FILENO, ...) which
- * remains connected to the terminal throughout.
+ * WASI has no pipe(), so pipeline stages are serialized via temp files.
+ * Each stage redirects stdout to a temp file, the next stage reads from
+ * it as stdin. After all stages complete, the final temp file is read
+ * and written to STDERR_FILENO (or capture file for command substitution).
+ *
+ * Rationale for stderr output: freopen() permanently changes fd 1.
+ * Without dup() (not available in WASI Preview2), there is no way to
+ * restore fd 1 to the host stdout after redirecting it to temp files.
+ * STDERR_FILENO (fd 2) is independent and always reaches the terminal.
  */
 #include <assert.h>
 #include <errno.h>
@@ -52,9 +56,9 @@ int run_pipeline(struct mrsh_context *ctx, struct mrsh_pipeline *pl) {
 
 	/* Multi-command pipeline: serialize via temp files.
 	 *
-	 * Every stage redirects stdout to a temp file. The final
-	 * stage's temp file is read and written to stderr (the only
-	 * fd that reliably reaches the terminal in WASI).
+	 * ALL stages redirect stdout to a temp file. After all stages
+	 * complete, the final temp file is read and written to stderr
+	 * (or the capture file for command substitution).
 	 */
 	int n = (int)pl->commands.len;
 	int ret = 0;
@@ -79,7 +83,7 @@ int run_pipeline(struct mrsh_context *ctx, struct mrsh_pipeline *pl) {
 			}
 		}
 
-		/* Redirect stdout to temp file for this stage */
+		/* Redirect stdout to temp file (all stages, including last) */
 		if (freopen(tmpname, "w", stdout) == NULL) {
 			fprintf(stderr, "wsh: pipeline freopen stdout failed: %s\n",
 				strerror(errno));
@@ -101,32 +105,32 @@ int run_pipeline(struct mrsh_context *ctx, struct mrsh_pipeline *pl) {
 
 	wsh_stdout_redirected = prev_redirected;
 
-	/* Restore stdin */
-	freopen("/dev/null", "r", stdin);
-
-	/* Emit final stage output */
+	/* Read final stage's temp file and emit output */
 	char final_tmp[64];
 	snprintf(final_tmp, sizeof(final_tmp), "%s%d_%d", WSH_PIPE_PREFIX,
 		(int)getpid(), n - 1);
 
 	size_t len = 0;
 	char *output = read_entire_file(final_tmp, &len);
+	unlink(final_tmp);
+
 	if (output && len > 0) {
 		if (wsh_capture_file) {
-			/* Inside command substitution: append to the capture
-			 * file so run_word_command can read it back */
-			FILE *cap = fopen(wsh_capture_file, "a");
-			if (cap) {
-				fwrite(output, 1, len, cap);
-				fclose(cap);
+			/* Command substitution: append to capture file */
+			FILE *f = fopen(wsh_capture_file, "ab");
+			if (f) {
+				fwrite(output, 1, len, f);
+				fclose(f);
 			}
 		} else {
-			/* Top-level pipeline: emit to stderr (terminal) */
+			/* Normal pipeline: write to stderr */
 			write(STDERR_FILENO, output, len);
 		}
 	}
 	free(output);
-	unlink(final_tmp);
+
+	/* Restore stdin */
+	freopen("/dev/null", "r", stdin);
 
 	if (pl->bang && ret >= 0) ret = !ret;
 	return ret;

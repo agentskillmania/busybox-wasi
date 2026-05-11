@@ -41,17 +41,17 @@ static void populate_env_iterator(const char *key, void *_var, void *_) {
 }
 
 /* Flag: when set, stdout is already redirected by pipeline/word_command.
- * When clear, run_process handles temp file + stderr output itself.
- */
+ * When clear, run_simple_command handles temp file + stderr output. */
 int wsh_stdout_redirected = 0;
 
-/* When non-NULL, run_process and pipeline should write output to this
- * file instead of stderr. Used by command substitution to capture output
- * from nested pipelines. */
+/* When non-NULL, pipeline should append final output to this file
+ * instead of stderr. Used by command substitution to capture output. */
 const char *wsh_capture_file = NULL;
 
-/* Counter for unique temp file names */
+/* Counter for unique capture temp file names */
 static int wsh_out_counter = 0;
+
+#define WSH_CAPTURE_PREFIX "/tmp/_wsh_c_"
 
 static int run_process(struct mrsh_context *ctx, struct mrsh_simple_command *sc,
 		char **argv) {
@@ -79,8 +79,9 @@ static int run_process(struct mrsh_context *ctx, struct mrsh_simple_command *sc,
 	int argc = 0;
 	while (argv[argc]) argc++;
 
-	/* Apply I/O redirects from the command (e.g. > file, >> file). */
-	int stdout_redir_fd = -1;
+	/* Apply I/O redirects using freopen() since dup2 is a stub in WASI.
+	 * Each redirect reassigns the FILE* so C stdio stays in sync.
+	 * Track non-stdout redirects so we can restore them after capture. */
 	for (size_t i = 0; i < sc->io_redirects.len; ++i) {
 		struct mrsh_io_redirect *redir = sc->io_redirects.data[i];
 		int redir_fd;
@@ -88,14 +89,30 @@ static int run_process(struct mrsh_context *ctx, struct mrsh_simple_command *sc,
 		if (fd < 0) {
 			return TASK_STATUS_ERROR;
 		}
+		char *fname = mrsh_word_str(redir->name);
+		bool ok = false;
 		if (redir_fd == STDOUT_FILENO) {
-			stdout_redir_fd = fd;
+			const char *mode = "w";
+			if (redir->op == MRSH_IO_DGREAT)
+				mode = "a";
+			fflush(stdout);
+			ok = freopen(fname, mode, stdout) != NULL;
+		} else if (redir_fd == STDIN_FILENO) {
+			fflush(stdin);
+			ok = freopen(fname, "r", stdin) != NULL;
+		} else if (redir_fd == STDERR_FILENO) {
+			const char *mode = "w";
+			if (redir->op == MRSH_IO_DGREAT)
+				mode = "a";
+			fflush(stderr);
+			ok = freopen(fname, mode, stderr) != NULL;
 		} else {
-			if (dup2(fd, redir_fd) < 0) {
-				close(fd);
-				return TASK_STATUS_ERROR;
-			}
-			close(fd);
+			fprintf(stderr, "wsh: cannot redirect fd %d\n", redir_fd);
+		}
+		free(fname);
+		close(fd);
+		if (!ok) {
+			return TASK_STATUS_ERROR;
 		}
 	}
 
@@ -119,13 +136,6 @@ static int run_process(struct mrsh_context *ctx, struct mrsh_simple_command *sc,
 			else
 				host_runner_string_dup(&cwd, "/");
 
-			/* Apply stdout redirect for guest component */
-			if (stdout_redir_fd >= 0) {
-				fflush(stdout);
-				dup2(stdout_redir_fd, STDOUT_FILENO);
-				close(stdout_redir_fd);
-			}
-
 			int rc;
 			if (strcmp(argv[0], "git") == 0)
 				rc = agentskillmania_subcommand_git_execute(&cwd, &cm_args);
@@ -140,32 +150,6 @@ static int run_process(struct mrsh_context *ctx, struct mrsh_simple_command *sc,
 #endif
 		fprintf(stderr, "wsh: %s: applet not found\n", argv[0]);
 		return 127;
-	}
-
-	int need_capture = !wsh_stdout_redirected && stdout_redir_fd < 0;
-	char tmpname[64];
-
-	if (stdout_redir_fd >= 0) {
-		/* Stdout redirected to file */
-		if (dup2(stdout_redir_fd, STDOUT_FILENO) < 0) {
-			close(stdout_redir_fd);
-			return TASK_STATUS_ERROR;
-		}
-		close(stdout_redir_fd);
-	} else if (need_capture) {
-		/* WASM: redirect stdout to temp file, then emit via stderr.
-		 * In WASI, freopen() destroys the original stdout fd and it
-		 * cannot be recovered (no dup/dup2). So every standalone
-		 * command captures output to a temp file and writes the
-		 * result to stderr, which remains connected to the terminal.
-		 */
-		snprintf(tmpname, sizeof(tmpname), "/tmp/_wsh_out_%d_%d",
-			(int)getpid(), wsh_out_counter++);
-
-		if (freopen(tmpname, "w", stdout) == NULL) {
-			fprintf(stderr, "wsh: failed to redirect stdout\n");
-			return 1;
-		}
 	}
 
 	/* Copy argv so applet's getopt32/mutating argv ops don't
@@ -206,91 +190,50 @@ static int run_process(struct mrsh_context *ctx, struct mrsh_simple_command *sc,
 	die_func = saved_die_func;
 	xfunc_error_retval = saved_error_retval;
 
-	if (need_capture) {
-		/* Read captured output and emit via stderr */
-		FILE *f = fopen(tmpname, "rb");
-		if (f) {
-			char buf[4096];
-			size_t n;
-			while ((n = fread(buf, 1, sizeof(buf), f)) > 0) {
-				write(STDERR_FILENO, buf, n);
-			}
-			fclose(f);
-		}
-		unlink(tmpname);
-	}
-
 	return ret;
-}
-
-struct saved_fd {
-	int dup_fd;
-	int redir_fd;
-};
-
-static bool dup_and_save_fd(int fd, int redir_fd, struct saved_fd *saved) {
-	saved->redir_fd = redir_fd;
-	saved->dup_fd = -1;
-
-	if (fd == redir_fd) {
-		return true;
-	}
-
-	saved->dup_fd = dup(redir_fd);
-	if (saved->dup_fd < 0) {
-		fprintf(stderr, "failed to duplicate file descriptor: %s\n",
-			strerror(errno));
-		return false;
-	}
-
-	if (dup2(fd, redir_fd) < 0) {
-		fprintf(stderr, "failed to duplicate file descriptor: %s\n",
-			strerror(errno));
-		return false;
-	}
-
-	return true;
 }
 
 static int run_builtin(struct mrsh_context *ctx, struct mrsh_simple_command *sc,
 		int argc, char **argv) {
-	struct saved_fd fds[sc->io_redirects.len + 1];
-	for (size_t i = 0; i < sizeof(fds) / sizeof(fds[0]); ++i) {
-		fds[i].dup_fd = fds[i].redir_fd = -1;
-	}
-
 	for (size_t i = 0; i < sc->io_redirects.len; ++i) {
 		struct mrsh_io_redirect *redir = sc->io_redirects.data[i];
-		struct saved_fd *saved = &fds[i];
-
 		int redir_fd;
 		int fd = process_redir(redir, &redir_fd);
 		if (fd < 0) {
 			return TASK_STATUS_ERROR;
 		}
-
-		if (!dup_and_save_fd(fd, redir_fd, saved)) {
+		char *fname = mrsh_word_str(redir->name);
+		bool ok = false;
+		if (redir_fd == STDIN_FILENO) {
+			fflush(stdin);
+			ok = freopen(fname, "r", stdin) != NULL;
+		} else if (redir_fd == STDOUT_FILENO) {
+			const char *mode = "w";
+			if (redir->op == MRSH_IO_DGREAT)
+				mode = "a";
+			fflush(stdout);
+			ok = freopen(fname, mode, stdout) != NULL;
+		} else if (redir_fd == STDERR_FILENO) {
+			const char *mode = "w";
+			if (redir->op == MRSH_IO_DGREAT)
+				mode = "a";
+			fflush(stderr);
+			ok = freopen(fname, mode, stderr) != NULL;
+		} else {
+			fprintf(stderr, "wsh: cannot redirect fd %d\n", redir_fd);
+		}
+		free(fname);
+		close(fd);
+		if (!ok) {
 			return TASK_STATUS_ERROR;
 		}
+
 	}
 
 	int ret = mrsh_run_builtin(ctx->state, argc, argv);
 
 	fflush(stdout);
 	fflush(stderr);
-
-	for (size_t i = 0; i < sizeof(fds) / sizeof(fds[0]); ++i) {
-		if (fds[i].dup_fd < 0) {
-			continue;
-		}
-
-		if (dup2(fds[i].dup_fd, fds[i].redir_fd) < 0) {
-			fprintf(stderr, "failed to duplicate file descriptor: %s\n",
-				strerror(errno));
-			return TASK_STATUS_ERROR;
-		}
-		close(fds[i].dup_fd);
-	}
 
 	return ret;
 }
@@ -422,6 +365,23 @@ int run_simple_command(struct mrsh_context *ctx, struct mrsh_simple_command *sc)
 		free(ps4);
 	}
 
+	/* Capture setup: redirect stdout to a temp file so that subsequent
+	 * commands can restore fd 1 after redirects. Without dup() (not
+	 * available in WASI Preview2), freopen() permanently changes fd 1.
+	 * The next command's capture freopen restores fd 1 to a new file.
+	 * Skip when pipeline or command substitution manages stdout. */
+	char capture_tmp[64] = {0};
+	int need_capture = !wsh_stdout_redirected;
+	if (need_capture) {
+		snprintf(capture_tmp, sizeof(capture_tmp), "%s%d_%d",
+			WSH_CAPTURE_PREFIX, (int)getpid(), wsh_out_counter++);
+		fflush(stdout);
+		if (freopen(capture_tmp, "w", stdout) == NULL) {
+			capture_tmp[0] = '\0';
+			need_capture = 0;
+		}
+	}
+
 	ret = -1;
 	const struct mrsh_function *fn_def =
 		mrsh_hashtable_get(&priv->functions, argv_0);
@@ -435,6 +395,21 @@ int run_simple_command(struct mrsh_context *ctx, struct mrsh_simple_command *sc)
 		ret = run_builtin(ctx, sc, argc, argv);
 	} else {
 		ret = run_process(ctx, sc, argv);
+	}
+
+	/* Capture emission: read temp file and write to stderr */
+	if (need_capture && capture_tmp[0]) {
+		fflush(stdout);
+		FILE *f = fopen(capture_tmp, "rb");
+		if (f) {
+			char buf[4096];
+			size_t n;
+			while ((n = fread(buf, 1, sizeof(buf), f)) > 0) {
+				write(STDERR_FILENO, buf, n);
+			}
+			fclose(f);
+		}
+		unlink(capture_tmp);
 	}
 
 	mrsh_command_destroy(&sc->command);
