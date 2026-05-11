@@ -1,4 +1,4 @@
-/* mrsh/shell/task/pipeline.c — WASM serial pipeline via temp files
+/* mrsh/shell/task/pipeline.c -- WASM serial pipeline via temp files
  *
  * WASI has no pipe(), so pipeline stages are serialized via temp files.
  * Each stage redirects stdout to a temp file, the next stage reads from
@@ -18,13 +18,18 @@
 #include <unistd.h>
 #include "shell/task.h"
 
-/* Defined in simple_command.c — when set, run_process skips its own
+/* Defined in simple_command.c -- when set, run_process skips its own
  * temp file + stderr output because stdout is already redirected. */
 extern int wsh_stdout_redirected;
 
 /* When non-NULL, final output should be written to this capture file
  * (command substitution context). */
 extern const char *wsh_capture_file;
+
+/* Defined in simple_command.c -- current stdout/stdin redirect targets.
+ * Set alongside every freopen(); used to inform component guests. */
+extern const char *wsh_stdout_file;
+extern const char *wsh_stdin_file;
 
 #define WSH_PIPE_PREFIX "/tmp/_wsh_p_"
 
@@ -63,7 +68,11 @@ int run_pipeline(struct mrsh_context *ctx, struct mrsh_pipeline *pl) {
 	int n = (int)pl->commands.len;
 	int ret = 0;
 	int prev_redirected = wsh_stdout_redirected;
+	const char *prev_stdout_file = wsh_stdout_file;
+	const char *prev_stdin_file = wsh_stdin_file;
 	wsh_stdout_redirected = 1;
+	wsh_stdout_file = NULL;
+	wsh_stdin_file = NULL;
 
 	for (int i = 0; i < n; i++) {
 		char tmpname[64];
@@ -75,19 +84,25 @@ int run_pipeline(struct mrsh_context *ctx, struct mrsh_pipeline *pl) {
 			char prev[64];
 			snprintf(prev, sizeof(prev), "%s%d_%d", WSH_PIPE_PREFIX,
 				(int)getpid(), i - 1);
+			wsh_stdin_file = prev;
 			if (freopen(prev, "r", stdin) == NULL) {
 				fprintf(stderr, "wsh: pipeline freopen stdin failed: %s\n",
 					strerror(errno));
 				wsh_stdout_redirected = prev_redirected;
+				wsh_stdout_file = prev_stdout_file;
+				wsh_stdin_file = prev_stdin_file;
 				return 1;
 			}
 		}
 
 		/* Redirect stdout to temp file (all stages, including last) */
+		wsh_stdout_file = tmpname;
 		if (freopen(tmpname, "w", stdout) == NULL) {
 			fprintf(stderr, "wsh: pipeline freopen stdout failed: %s\n",
 				strerror(errno));
 			wsh_stdout_redirected = prev_redirected;
+			wsh_stdout_file = prev_stdout_file;
+			wsh_stdin_file = prev_stdin_file;
 			return 1;
 		}
 
@@ -104,6 +119,8 @@ int run_pipeline(struct mrsh_context *ctx, struct mrsh_pipeline *pl) {
 	}
 
 	wsh_stdout_redirected = prev_redirected;
+	wsh_stdout_file = prev_stdout_file;
+	wsh_stdin_file = prev_stdin_file;
 
 	/* Read final stage's temp file and emit output */
 	char final_tmp[64];

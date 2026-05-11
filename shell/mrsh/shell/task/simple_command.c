@@ -48,6 +48,18 @@ int wsh_stdout_redirected = 0;
  * instead of stderr. Used by command substitution to capture output. */
 const char *wsh_capture_file = NULL;
 
+/* Current file that host's stdout is redirected to.
+ * Set alongside every freopen() on stdout.
+ * NULL when stdout hasn't been redirected.
+ * Used to inform component guests where to write output. */
+const char *wsh_stdout_file = NULL;
+
+/* Current file that host's stdin is redirected from.
+ * Set alongside every freopen() on stdin.
+ * NULL when stdin hasn't been redirected.
+ * Used to inform component guests where to read input. */
+const char *wsh_stdin_file = NULL;
+
 /* Counter for unique capture temp file names */
 static int wsh_out_counter = 0;
 
@@ -79,42 +91,50 @@ static int run_process(struct mrsh_context *ctx, struct mrsh_simple_command *sc,
 	int argc = 0;
 	while (argv[argc]) argc++;
 
-	/* Apply I/O redirects using freopen() since dup2 is a stub in WASI.
-	 * Each redirect reassigns the FILE* so C stdio stays in sync.
-	 * Track non-stdout redirects so we can restore them after capture. */
-	for (size_t i = 0; i < sc->io_redirects.len; ++i) {
-		struct mrsh_io_redirect *redir = sc->io_redirects.data[i];
-		int redir_fd;
-		int fd = process_redir(redir, &redir_fd);
-		if (fd < 0) {
-			return TASK_STATUS_ERROR;
+		/* Apply I/O redirects using freopen() since dup2 is a stub in WASI.
+		 * Each redirect reassigns the FILE* so C stdio stays in sync.
+		 * Track redirect file paths for component guest dispatch. */
+		char proc_stdout_file[256] = "";
+		char proc_stdin_file[256] = "";
+		for (size_t i = 0; i < sc->io_redirects.len; ++i) {
+			struct mrsh_io_redirect *redir = sc->io_redirects.data[i];
+			int redir_fd;
+			int fd = process_redir(redir, &redir_fd);
+			if (fd < 0) {
+				return TASK_STATUS_ERROR;
+			}
+			char *fname = mrsh_word_str(redir->name);
+			bool ok = false;
+			if (redir_fd == STDOUT_FILENO) {
+				const char *mode = "w";
+				if (redir->op == MRSH_IO_DGREAT)
+					mode = "a";
+				fflush(stdout);
+				ok = freopen(fname, mode, stdout) != NULL;
+				snprintf(proc_stdout_file, sizeof(proc_stdout_file), "%s", fname);
+			} else if (redir_fd == STDIN_FILENO) {
+				fflush(stdin);
+				ok = freopen(fname, "r", stdin) != NULL;
+				snprintf(proc_stdin_file, sizeof(proc_stdin_file), "%s", fname);
+			} else if (redir_fd == STDERR_FILENO) {
+				const char *mode = "w";
+				if (redir->op == MRSH_IO_DGREAT)
+					mode = "a";
+				fflush(stderr);
+				ok = freopen(fname, mode, stderr) != NULL;
+			} else {
+				fprintf(stderr, "wsh: cannot redirect fd %d\n", redir_fd);
+			}
+			free(fname);
+			close(fd);
+			if (!ok) {
+				return TASK_STATUS_ERROR;
+			}
 		}
-		char *fname = mrsh_word_str(redir->name);
-		bool ok = false;
-		if (redir_fd == STDOUT_FILENO) {
-			const char *mode = "w";
-			if (redir->op == MRSH_IO_DGREAT)
-				mode = "a";
-			fflush(stdout);
-			ok = freopen(fname, mode, stdout) != NULL;
-		} else if (redir_fd == STDIN_FILENO) {
-			fflush(stdin);
-			ok = freopen(fname, "r", stdin) != NULL;
-		} else if (redir_fd == STDERR_FILENO) {
-			const char *mode = "w";
-			if (redir->op == MRSH_IO_DGREAT)
-				mode = "a";
-			fflush(stderr);
-			ok = freopen(fname, mode, stderr) != NULL;
-		} else {
-			fprintf(stderr, "wsh: cannot redirect fd %d\n", redir_fd);
-		}
-		free(fname);
-		close(fd);
-		if (!ok) {
-			return TASK_STATUS_ERROR;
-		}
-	}
+
+		/* Update global redirect tracking for component guests */
+		if (proc_stdout_file[0]) wsh_stdout_file = proc_stdout_file;
+		if (proc_stdin_file[0]) wsh_stdin_file = proc_stdin_file;
 
 	/* Look up BusyBox applet */
 	int idx = find_applet_by_name(argv[0]);
@@ -136,14 +156,20 @@ static int run_process(struct mrsh_context *ctx, struct mrsh_simple_command *sc,
 			else
 				host_runner_string_dup(&cwd, "/");
 
+			host_runner_string_t stdout_f, stdin_f;
+			host_runner_string_dup(&stdout_f, wsh_stdout_file ? wsh_stdout_file : "");
+			host_runner_string_dup(&stdin_f, wsh_stdin_file ? wsh_stdin_file : "");
+
 			int rc;
 			if (strcmp(argv[0], "git") == 0)
-				rc = agentskillmania_subcommand_git_execute(&cwd, &cm_args);
+				rc = agentskillmania_subcommand_git_execute(&cwd, &cm_args, &stdout_f, &stdin_f);
 			else
-				rc = agentskillmania_subcommand_python_execute(&cwd, &cm_args);
+				rc = agentskillmania_subcommand_python_execute(&cwd, &cm_args, &stdout_f, &stdin_f);
 
 			fflush(stdout);
 			host_runner_string_free(&cwd);
+			host_runner_string_free(&stdout_f);
+			host_runner_string_free(&stdin_f);
 			host_runner_list_string_free(&cm_args);
 			return rc;
 		}
@@ -379,6 +405,8 @@ int run_simple_command(struct mrsh_context *ctx, struct mrsh_simple_command *sc)
 		if (freopen(capture_tmp, "w", stdout) == NULL) {
 			capture_tmp[0] = '\0';
 			need_capture = 0;
+		} else {
+			wsh_stdout_file = capture_tmp;
 		}
 	}
 
